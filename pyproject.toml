@@ -1,0 +1,41 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-server-registry"
+version = "1.0.0"
+description = "MCP Server registry"
+authors = [{name = "Vinod Kumar KP", email = "vinodkumar.kp.1985@gmail.com"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["mcp", "mcp-server-registry"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/weather-mcp-server"
+Repository = "https://github.com/yourusername/weather-mcp-server"
+Issues = "https://github.com/yourusername/weather-mcp-server/issues"
+
+[project.scripts]
+git-mcp-server = "mcp_servers.servers.git_server.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = [".venv", "build", "mcp_server_registry.egg_info"]
