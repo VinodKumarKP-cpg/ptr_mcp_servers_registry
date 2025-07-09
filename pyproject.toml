@@ -38,5 +38,5 @@ git-mcp-server = "mcp_servers.servers.git_server.server:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["mcp_servers", "mcp_servers.servers", "mcp_servers.servers.git_server"]
+include = ["mcp_servers", "mcp_servers.servers", "mcp_servers.utils", "mcp_servers.servers.git_server"]
 exclude = [".venv", "build", "mcp_server_registry.egg_info"]
