@@ -26,7 +26,10 @@ classifiers = [
 
 dependencies = [
     "mcp>=1.0.0",
+    "fastmcp",
+    "nest-asyncio",
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/yourusername/weather-mcp-server"
@@ -34,12 +37,13 @@ Repository = "https://github.com/yourusername/weather-mcp-server"
 Issues = "https://github.com/yourusername/weather-mcp-server/issues"
 
 [project.scripts]
-git-mcp-server = "mcp_servers.servers.git_server.server:main"
+git-mcp-server = "mcp_servers_registry.servers.git_server.server:main"
+weather-mcp-server = "mcp_servers_registry.server:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["mcp_servers*"]
+include = ["mcp_servers_registry*"]
 exclude = [".venv", "build", "mcp_server_registry.egg_info"]
 
 [tool.setuptools.package-data]
-"mcp_servers" = ["**/*"]
+"mcp_servers_registry" = ["**/*"]

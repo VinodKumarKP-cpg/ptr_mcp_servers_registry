@@ -13,13 +13,21 @@ for path in path_list:
     if path not in sys.path:
         sys.path.append(path)
 
+# Fix the import path resolution
+file_root = os.path.dirname(os.path.abspath(__file__))
+# Go up to the root of the project (where mcp_servers is located)
+project_root = os.path.abspath(os.path.join(file_root, '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+
 import nest_asyncio  # Added import
 
 nest_asyncio.apply()  # Added call
 
 from fastmcp import FastMCP
-from mcp_servers.utils.git_utils import GitUtils
-from mcp_servers.utils.logger_utils import get_logger
+from mcp_servers_registry.utils.git_utils import GitUtils
+from mcp_servers_registry.utils.logger_utils import get_logger
 
 # Configure logging
 logger = get_logger()
