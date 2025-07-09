@@ -287,10 +287,15 @@ uv run code-remediation-server
 ### Adding New Servers
 
 1. Create a new directory for your server: `new_server/`
-2. Implement the server using FastMCP framework
+2. Implement the server using FastMCP framework and name the script as 'server.py'
 3. Add utility functions to `mcp_servers_registry/utils/`
 4. Add documentation and README
-5. Update the main project configuration
+5. Add an entry in pyproject.toml under the section "[project.scripts]" as follows:
+```commandline
+<<mcp-server-name>> = "mcp_servers_registry.servers.<<mcp server package name>>.server:main"
+```
+6. Update the main project README with summary details of the server.
+
 
 ## Security Considerations
 
@@ -354,19 +359,10 @@ For support, questions, or feature requests:
 
 ## Roadmap
 
-### Planned Features
-- **Additional Language Support**: Expand code analysis to more programming languages
-- **Integration Templates**: Pre-built configurations for popular development tools
-- **Performance Monitoring**: Built-in metrics and monitoring capabilities
-- **Custom Analysis Rules**: User-defined analysis rules and remediation patterns
-- **Batch Processing**: Analyze multiple repositories simultaneously
-- **Web Interface**: Optional web-based interface for repository management
-
 ### Future Servers
+- **Service Now Server**: Service now reporting and analysis
 - **Documentation Server**: Automated documentation generation and analysis
 - **Testing Server**: Test coverage analysis and test generation
-- **Deployment Server**: Deployment pipeline analysis and optimization
-- **Security Server**: Advanced security scanning and compliance checking
 
 ## Acknowledgments
 

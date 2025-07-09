@@ -18,6 +18,9 @@ A powerful Model Context Protocol (MCP) server that provides automated code anal
 
 ## Installation
 
+### Set the environment variable
+- Set the environment variable 'RESULT_BUCKET' to the s3 bucket where the remediation result will be stored.
+
 ### Option 1: Direct UV Run (Recommended)
 Use uv to run the server directly without local installation:
 
