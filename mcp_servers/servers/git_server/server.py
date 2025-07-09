@@ -18,8 +18,8 @@ import nest_asyncio  # Added import
 nest_asyncio.apply()  # Added call
 
 from fastmcp import FastMCP
-from utils.git_utils import GitUtils
-from utils.logger_utils import get_logger
+from mcp_servers.utils.git_utils import GitUtils
+from mcp_servers.utils.logger_utils import get_logger
 
 # Configure logging
 logger = get_logger()
