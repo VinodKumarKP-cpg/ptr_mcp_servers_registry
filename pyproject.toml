@@ -38,7 +38,6 @@ Issues = "https://github.com/yourusername/weather-mcp-server/issues"
 
 [project.scripts]
 git-mcp-server = "mcp_servers_registry.servers.git_server.server:main"
-weather-mcp-server = "mcp_servers_registry.server:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
