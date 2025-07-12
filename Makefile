@@ -101,3 +101,4 @@ help:
 	@echo "  start-<service>        Start a specific service (replace <service> with name)"
 	@echo "  stop-<service>         Stop a specific service (replace <service> with name)"
 	@echo "  restart-<service>      Restart a specific service (replace <service> with name)"
+	@echo "  generate-compose       Generate docker compose"
