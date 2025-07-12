@@ -76,14 +76,11 @@ class BaseMCPServer(ABC):
     def _register_methods(self, object):
         for method_name, method in getmembers(object):
 
-            if not ismethod(method) and isfunction(method):
-                continue
-
-            # Skip private methods
-            if method_name.startswith('_'):
-                continue
-            self.mcp.tool()(method)
-
+            if ismethod(method) or  isfunction(method):
+                # Skip private methods
+                if method_name.startswith('_'):
+                    continue
+                self.mcp.tool()(method)
 
     def _register_tools(self):
         """Abstract method to register tools. Must be implemented by subclasses."""

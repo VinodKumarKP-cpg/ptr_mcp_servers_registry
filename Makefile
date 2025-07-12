@@ -1,5 +1,5 @@
-SERVICES_DIR := ./mcp_servers_registry/servers
-SERVICES := $(shell find $(SERVICES_DIR) -maxdepth 1 -type d -not -path $(SERVICES_DIR) -exec basename {} \;)
+CONFIG_FILE := mcp_servers_registry/servers/server_config.json
+SERVICES := $(shell jq -r 'keys[]' $(CONFIG_FILE))
 
 define KILL_MCP_SERVER
  @if docker ps --format '{{.Names}}' | grep -w $(1); then \
@@ -29,11 +29,12 @@ endef
 
 define RUN_DOCKER_COMPOSE
  $(MAKE) docker-build
+ $(MAKE) generate-compose
  echo "Executing compose up";
  @if [ -z "$(1)" ]; then \
-  docker compose up -d; \
+  docker compose up -d --build; \
  else \
-  docker compose up -d $(1); \
+  docker compose up -d $(1) --build; \
  fi;
 endef
 
@@ -55,6 +56,9 @@ uninstall:
 docker-build:
 	docker build -f Dockerfile . -t mcp_server
 
+generate-compose:
+	python docker_compose_generator.py
+
 start-all:
 	$(call RUN_DOCKER_COMPOSE)
 
@@ -65,9 +69,8 @@ stop-all:
 list-services:
 	@echo "Discovered services:"
 	@for service in $(SERVICES); do \
-		echo "  - $$service"; \
+		echo "  - $$service" ; \
 	done
-
 
 # Template for generating service targets
 define SERVICE_TEMPLATE
@@ -96,3 +99,5 @@ help:
 	@echo "  stop-all               Stop all services using docker compose"
 	@echo "  list-services          List all discovered services"
 	@echo "  start-<service>        Start a specific service (replace <service> with name)"
+	@echo "  stop-<service>         Stop a specific service (replace <service> with name)"
+	@echo "  restart-<service>      Restart a specific service (replace <service> with name)"

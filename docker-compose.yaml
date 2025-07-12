@@ -1,53 +1,81 @@
 version: '3.8'
-
 services:
-  # Git Server
   git_server:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: mcp-git-server
     ports:
-      - "8000:8000"
+    - 8000:8000
     volumes:
-      - ./logs:/tmp
+    - ./logs:/tmp
     environment:
-      - MCP_SERVER_NAME=git_server
+    - MCP_SERVER_NAME=git_server
     command: --transport sse
     restart: unless-stopped
     networks:
-      - mcp-network
+    - mcp-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8000/health
       interval: 30s
       timeout: 10s
       retries: 3
-
   code_remediation_server:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: mcp-code-remediation-server
     ports:
-      - "8001:8001"
+    - 8001:8001
     volumes:
-      - ./logs:/tmp
+    - ./logs:/tmp
     environment:
-      - MCP_SERVER_NAME=code_remediation_server
-      - RESULTS_BUCKET=vkp
+    - MCP_SERVER_NAME=code_remediation_server
+    - RESULTS_BUCKET=${RESULTS_BUCKET}
     command: --transport sse
     restart: unless-stopped
     networks:
-      - mcp-network
+    - mcp-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8001/health
       interval: 30s
       timeout: 10s
       retries: 3
-
+  file_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-file-server
+    ports:
+    - 8002:8002
+    volumes:
+    - ./logs:/tmp
+    environment:
+    - MCP_SERVER_NAME=file_server
+    command: --transport sse
+    restart: unless-stopped
+    networks:
+    - mcp-network
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8002/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
 networks:
   mcp-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
+      - subnet: 172.21.0.0/16
