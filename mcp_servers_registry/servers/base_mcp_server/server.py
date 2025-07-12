@@ -43,7 +43,9 @@ class BaseMCPServer(ABC):
         self.server_name = server_name
         self.logger = get_logger()
         self.server_config: MCPServerConfig = self.get_server_config()
-        self.mcp = FastMCP(server_name, port=self.server_config.port)
+        self.mcp = FastMCP(server_name,
+                           host="0.0.0.0",
+                           port=self.server_config.port)
 
         # Register tools after initialization
         self._register_tools()
