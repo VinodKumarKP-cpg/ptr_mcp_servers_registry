@@ -10,7 +10,7 @@ endef
 
 define KILL_MCP_SERVER
  @if docker ps -a --format '{{.Names}}' | grep -w $(1); then \
-  docker kill $(1); \
+  docker rm $(1); \
  else \
   echo "Container $(1) does not exist."; \
  fi
@@ -25,14 +25,26 @@ uninstall:
 docker-build:
 	docker build -f Dockerfile . -t mcp_server
 
-docker-run-git-mcp-server:
+docker-run-mcp-git-server:
 	$(call RUN_MCP_SERVER,git_server,8000,mcp-git-server)
 
-docker-kill-git-mcp-server:
+docker-kill-mcp-git-server:
 	$(call KILL_MCP_SERVER,mcp-git-server)
 
-docker-run-code-remediation-mcp-server:
+docker-run-mcp-code-remediation-server:
 	$(call RUN_MCP_SERVER,code_remediation_server,8001,mcp-code-remediation-server)
 
-docker-kill-code-remediation-mcp-server:
+docker-kill-mcp-code-remediation-server:
 	$(call KILL_MCP_SERVER,mcp-code-remediation-server)
+
+up-all-server:
+	docker compose up -d
+
+up-down-server:
+	docker compose down
+
+up-git-mcp-server:
+	docker compose up -d git_server
+
+up-mcp-code-remediation-server:
+	docker compose up -d code_remediation_server
