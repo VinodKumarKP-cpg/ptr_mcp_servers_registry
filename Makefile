@@ -1,19 +1,49 @@
-define RUN_MCP_SERVER
- @if docker ps -a --format '{{.Names}}' | grep -w $(3); then \
-  echo "Container $(1) already exists and running"; \
- else \
-  $(MAKE) docker-build; \
-  docker run --rm -d -p ${2}:${2} --name $(1) \
-  --env MCP_SERVER_NAME=${1} mcp_server:latest --transport sse; \
- fi
-endef
+SERVICES_DIR := ./mcp_servers_registry/servers
+SERVICES := $(shell find $(SERVICES_DIR) -maxdepth 1 -type d -not -path $(SERVICES_DIR) -exec basename {} \;)
 
 define KILL_MCP_SERVER
- @if docker ps -a --format '{{.Names}}' | grep -w $(1); then \
+ @if docker ps --format '{{.Names}}' | grep -w $(1); then \
+  echo "Stopping and removing container $(1)"; \
+  docker stop $(1) && docker rm $(1); \
+ elif docker ps -a --format '{{.Names}}' | grep -w $(1); then \
+  echo "Removing stopped container $(1)"; \
   docker rm $(1); \
  else \
   echo "Container $(1) does not exist."; \
  fi
+endef
+
+define RUN_MCP_SERVER
+ @if docker ps --format '{{.Names}}' | grep -w $(1); then \
+  echo "Container $(1) is already running"; \
+ else \
+  if docker ps -a --format '{{.Names}}' | grep -w $(1); then \
+   echo "Removing existing stopped container $(1)"; \
+   docker rm $(1); \
+  fi; \
+  $(MAKE) docker-build; \
+  docker run --rm -d -p $(2):$(2) --name $(1) \
+  --env MCP_SERVER_NAME=$(1) mcp_server:latest --transport sse; \
+ fi
+endef
+
+define RUN_DOCKER_COMPOSE
+ $(MAKE) docker-build
+ echo "Executing compose up";
+ @if [ -z "$(1)" ]; then \
+  docker compose up -d; \
+ else \
+  docker compose up -d $(1); \
+ fi;
+endef
+
+define DOWN_DOCKER_COMPOSE
+ echo "Executing compose down";
+ @if [ -z "$(1)" ]; then \
+  docker compose down; \
+ else \
+  docker compose stop $(1) && docker compose rm -f $(1); \
+ fi;
 endef
 
 install:
@@ -25,27 +55,44 @@ uninstall:
 docker-build:
 	docker build -f Dockerfile . -t mcp_server
 
-docker-run-mcp-git-server:
-	$(call RUN_MCP_SERVER,git_server,8000,mcp-git-server)
+start-all:
+	$(call RUN_DOCKER_COMPOSE)
 
-docker-kill-mcp-git-server:
-	$(call KILL_MCP_SERVER,mcp-git-server)
+stop-all:
+	$(call DOWN_DOCKER_COMPOSE)
 
-docker-run-mcp-code-remediation-server:
-	$(call RUN_MCP_SERVER,code_remediation_server,8001,mcp-code-remediation-server)
+# List all discovered services
+list-services:
+	@echo "Discovered services:"
+	@for service in $(SERVICES); do \
+		echo "  - $$service"; \
+	done
 
-docker-kill-mcp-code-remediation-server:
-	$(call KILL_MCP_SERVER,mcp-code-remediation-server)
 
-up-all-server:
-	$(MAKE) docker-build
-	docker compose up -d
+# Template for generating service targets
+define SERVICE_TEMPLATE
+start-$(1):
+	@echo "Starting service: $(1)"
+	$$(call RUN_DOCKER_COMPOSE,$(1))
 
-up-down-server:
-	docker compose down
+stop-$(1):
+	@echo "Stopping service: $(1)"
+	$$(call DOWN_DOCKER_COMPOSE,$(1))
 
-up-mcp-git-server:
-	docker compose up -d git_server
+restart-$(1): stop-$(1) start-$(1)
+	@echo "Restarted service: $(1)"
+endef
 
-up-mcp-code-remediation-server:
-	docker compose up -d code_remediation_server
+# Generate targets for each service
+$(foreach service,$(SERVICES),$(eval $(call SERVICE_TEMPLATE,$(service))))
+
+
+help:
+	@echo "Available commands:"
+	@echo "  install                Install the Python package"
+	@echo "  uninstall              Uninstall the Python package"
+	@echo "  docker-build           Build the MCP server Docker image"
+	@echo "  start-all              Start all services using docker compose"
+	@echo "  stop-all               Stop all services using docker compose"
+	@echo "  list-services          List all discovered services"
+	@echo "  start-<service>        Start a specific service (replace <service> with name)"
