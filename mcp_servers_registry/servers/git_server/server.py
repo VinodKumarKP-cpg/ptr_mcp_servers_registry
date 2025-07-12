@@ -36,6 +36,8 @@ class GitToolsServer(BaseMCPServer):
     def _register_tools(self):
         """Register all Git-related tools."""
 
+        super()._register_tools()
+
         @self.mcp.tool()
         async def clone_repository(git_url: str, branch: str = "main") -> str:
             """

@@ -4,6 +4,8 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from typing import Literal
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 
 file_root = os.path.dirname(os.path.abspath(__file__))
 path_list = [
@@ -71,7 +73,17 @@ class BaseMCPServer(ABC):
     @abstractmethod
     def _register_tools(self):
         """Abstract method to register tools. Must be implemented by subclasses."""
-        pass
+
+        @self.mcp.custom_route("/health", methods=["GET"])
+        async def health_check(request: Request) -> PlainTextResponse:
+            """
+            Health check endpoint that returns "OK" when the server is healthy.
+            You can also include more advanced checks here, like database connectivity.
+            """
+            # You might want to add more comprehensive health checks here,
+            # such as checking database connections or other dependencies.
+            # For a basic health check, simply returning "OK" is sufficient.
+            return PlainTextResponse("OK")
 
     def run(self, transport: Literal["stdio", "streamable-http", "sse"] = "stdio"):
         """Run the MCP server."""

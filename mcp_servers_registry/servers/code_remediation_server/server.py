@@ -32,6 +32,8 @@ class CodeRemediationServer(BaseMCPServer):
     def _register_tools(self):
         """Register all code remediation related tools."""
 
+        super()._register_tools()
+
         @self.mcp.tool()
         async def analyze_repository(git_url: str, branch: str = "main", issue_flag=True,
                                      remediated_code=False) -> dict:
