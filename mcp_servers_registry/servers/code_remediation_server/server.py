@@ -1,12 +1,11 @@
-import logging
 import os
 import sys
-from typing import List, Dict, Any, Optional, Coroutine
 
 file_root = os.path.dirname(os.path.abspath(__file__))
 path_list = [
     file_root,
-    os.path.dirname(file_root)
+    os.path.dirname(file_root),
+    os.path.dirname(os.path.dirname(file_root))
 ]
 for path in path_list:
     if path not in sys.path:
@@ -16,40 +15,48 @@ import nest_asyncio  # Added import
 
 nest_asyncio.apply()  # Added call
 
-from fastmcp import FastMCP
 from mcp_servers_registry.utils.code_remediation_utils import CodeRemediationUtils
-from mcp_servers_registry.utils.logger_utils import get_logger
-
-# Configure logging
-logger = get_logger()
+from mcp_servers_registry.servers.base_mcp_server.server import BaseMCPServer
 
 
-# Initialize MCP server
-mcp = FastMCP("code_remediation_server")
+class CodeRemediationServer(BaseMCPServer):
+    """Code remediation MCP server implementation."""
 
+    def __init__(self):
+        """
+        Initialize the Code Remediation server.
+        """
+        self.code_remediation_utils = CodeRemediationUtils()
+        super().__init__(self.base_directory(__file__))
 
-@mcp.tool()
-async def analyze_repository(git_url: str, branch: str = "main", issue_flag=True, remediated_code=False) -> dict:
-    """
-    Analyze the specified git repository.
+    def _register_tools(self):
+        """Register all code remediation related tools."""
 
-    Args:
-        git_url: Git repository URL
-        branch: Branch to analyze (default: main)
-        issue_flag: Flag to indicate if issues should be found
-        remediated_code: Flag to indicate if remediated code should be returned
+        @self.mcp.tool()
+        async def analyze_repository(git_url: str, branch: str = "main", issue_flag=True,
+                                     remediated_code=False) -> dict:
+            """
+            Analyze the specified git repository.
 
-    Returns:
-        dict: Analysis results
-    """
-    code_remediation_utils = CodeRemediationUtils()
-    return code_remediation_utils.analyze_repository(git_url=git_url,
-                                                     branch=branch,
-                                                     remediated_code=remediated_code,
-                                                     issue_flag=issue_flag)
+            Args:
+                git_url: Git repository URL
+                branch: Branch to analyze (default: main)
+                issue_flag: Flag to indicate if issues should be found
+                remediated_code: Flag to indicate if remediated code should be returned
+
+            Returns:
+                dict: Analysis results
+            """
+            return self.code_remediation_utils.analyze_repository(git_url=git_url,
+                                                                  branch=branch,
+                                                                  remediated_code=remediated_code,
+                                                                  issue_flag=issue_flag)
+
 
 def main():
-    mcp.run()
+    """Main function to run the Code Remediation server."""
+    server = CodeRemediationServer()
+    server.main()
 
 
 if __name__ == "__main__":

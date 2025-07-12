@@ -1,0 +1,8 @@
+{
+  "git_server": {
+    "port": 8000
+  },
+  "code_remediation_server": {
+    "port": 8001
+  }
+}
