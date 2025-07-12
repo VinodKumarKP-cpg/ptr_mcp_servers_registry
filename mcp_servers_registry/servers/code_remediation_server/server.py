@@ -26,33 +26,7 @@ class CodeRemediationServer(BaseMCPServer):
         """
         Initialize the Code Remediation server.
         """
-        self.code_remediation_utils = CodeRemediationUtils()
-        super().__init__(self.base_directory(__file__))
-
-    def _register_tools(self):
-        """Register all code remediation related tools."""
-
-        super()._register_tools()
-
-        @self.mcp.tool()
-        async def analyze_repository(git_url: str, branch: str = "main", issue_flag=True,
-                                     remediated_code=False) -> dict:
-            """
-            Analyze the specified git repository.
-
-            Args:
-                git_url: Git repository URL
-                branch: Branch to analyze (default: main)
-                issue_flag: Flag to indicate if issues should be found
-                remediated_code: Flag to indicate if remediated code should be returned
-
-            Returns:
-                dict: Analysis results
-            """
-            return self.code_remediation_utils.analyze_repository(git_url=git_url,
-                                                                  branch=branch,
-                                                                  remediated_code=remediated_code,
-                                                                  issue_flag=issue_flag)
+        super().__init__(self.base_directory(__file__), object_list=[CodeRemediationUtils()])
 
 
 def main():

@@ -38,12 +38,13 @@ docker-kill-mcp-code-remediation-server:
 	$(call KILL_MCP_SERVER,mcp-code-remediation-server)
 
 up-all-server:
+	$(MAKE) docker-build
 	docker compose up -d
 
 up-down-server:
 	docker compose down
 
-up-git-mcp-server:
+up-mcp-git-server:
 	docker compose up -d git_server
 
 up-mcp-code-remediation-server:

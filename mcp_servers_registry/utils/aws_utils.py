@@ -1,6 +1,8 @@
 import os
+
 import boto3
 from botocore.config import Config
+
 
 class AWSUtils:
     def __init__(self, read_timeout=1000):

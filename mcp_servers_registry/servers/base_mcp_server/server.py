@@ -2,8 +2,10 @@ import argparse
 import json
 import os
 import sys
-from abc import ABC, abstractmethod
-from typing import Literal
+from abc import ABC
+from inspect import ismethod, isfunction, getmembers
+from typing import Literal, List
+
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
@@ -35,7 +37,7 @@ class MCPServerConfig(BaseModel):
 class BaseMCPServer(ABC):
     """Base class for MCP servers that accepts server name as input parameter."""
 
-    def __init__(self, server_name: str):
+    def __init__(self, server_name: str, object_list: List[object]):
         """
         Initialize the base MCP server.
 
@@ -50,6 +52,7 @@ class BaseMCPServer(ABC):
                            port=self.server_config.port)
 
         # Register tools after initialization
+        self.object_list = object_list
         self._register_tools()
 
     def get_server_config(self):
@@ -70,9 +73,22 @@ class BaseMCPServer(ABC):
         """Get the base directory of the MCP server."""
         return (os.path.dirname(os.path.abspath(file_name)).split("/"))[-1]
 
-    @abstractmethod
+    def _register_methods(self, object):
+        for method_name, method in getmembers(object):
+
+            if not ismethod(method) and isfunction(method):
+                continue
+
+            # Skip private methods
+            if method_name.startswith('_'):
+                continue
+            self.mcp.tool()(method)
+
     def _register_tools(self):
         """Abstract method to register tools. Must be implemented by subclasses."""
+
+        for obj in self.object_list:
+            self._register_methods(obj)
 
         @self.mcp.custom_route("/health", methods=["GET"])
         async def health_check(request: Request) -> PlainTextResponse:
