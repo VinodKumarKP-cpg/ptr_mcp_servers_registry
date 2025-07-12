@@ -11,7 +11,7 @@ services:
     - ./logs:/tmp
     environment:
     - MCP_SERVER_NAME=git_server
-    command: --transport sse
+    command: --transport streamable-http
     restart: unless-stopped
     networks:
     - mcp-network
@@ -36,7 +36,7 @@ services:
     environment:
     - MCP_SERVER_NAME=code_remediation_server
     - RESULTS_BUCKET=${RESULTS_BUCKET}
-    command: --transport sse
+    command: --transport streamable-http
     restart: unless-stopped
     networks:
     - mcp-network
@@ -46,30 +46,6 @@ services:
       - curl
       - -f
       - http://localhost:8001/health
-      interval: 30s
-      timeout: 10s
-      retries: 3
-  file_server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: mcp-file-server
-    ports:
-    - 8002:8002
-    volumes:
-    - ./logs:/tmp
-    environment:
-    - MCP_SERVER_NAME=file_server
-    command: --transport sse
-    restart: unless-stopped
-    networks:
-    - mcp-network
-    healthcheck:
-      test:
-      - CMD
-      - curl
-      - -f
-      - http://localhost:8002/health
       interval: 30s
       timeout: 10s
       retries: 3

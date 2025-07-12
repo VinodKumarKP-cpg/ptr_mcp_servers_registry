@@ -40,7 +40,7 @@ def generate_service_config(service_name: str, config: dict) -> dict:
         'ports': [f"{port}:{port}"],
         'volumes': ['./logs:/tmp'],
         'environment': environment,
-        'command': '--transport sse',
+        'command': '--transport streamable-http',
         'restart': 'unless-stopped',
         'networks': ['mcp-network'],
         'healthcheck': {
