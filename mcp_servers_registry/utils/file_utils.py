@@ -15,6 +15,17 @@ logger = logging.getLogger(__name__)
 class FileUtils:
     @staticmethod
     def read_file_content(repo_path: str, file_path: str, max_size: int = None) -> str:
+        """
+        Reads the content of a file from the given repository path.
+
+        Args:
+            repo_path (str): Path to the repository.
+            file_path (str): Relative path to the file within the repository.
+            max_size (int, optional): Maximum allowed file size in bytes.
+
+        Returns:
+            str: File content or error message if file is not found or too large.
+        """
         if max_size is None:
             max_size = MAX_FILE_SIZE
         full_path = os.path.join(repo_path, file_path)
@@ -31,6 +42,16 @@ class FileUtils:
 
     @staticmethod
     def get_file_content(directory_path, file_path: str) -> Dict[str, str]:
+        """
+        Gets the content of a file and returns it in a dictionary.
+
+        Args:
+            directory_path (str): Path to the directory.
+            file_path (str): Relative path to the file.
+
+        Returns:
+            Dict[str, str]: Dictionary with file path and content, or error message.
+        """
         try:
             content = FileUtils.read_file_content(directory_path, file_path)
             return {
@@ -45,6 +66,15 @@ class FileUtils:
 
     @staticmethod
     def get_file_list(repo_path: str) -> List[str]:
+        """
+        Retrieves a list of all files in the repository, excluding certain files and directories.
+
+        Args:
+            repo_path (str): Path to the repository.
+
+        Returns:
+            List[str]: List of relative file paths.
+        """
         file_list = []
         repo_path = Path(repo_path)
         try:
@@ -68,6 +98,15 @@ class FileUtils:
 
     @staticmethod
     def cleanup_temp_dir(temp_dir: Optional[str]) -> None:
+        """
+        Removes the specified temporary directory and its contents.
+
+        Args:
+            temp_dir (Optional[str]): Path to the temporary directory.
+
+        Returns:
+            None
+        """
         if temp_dir and os.path.exists(temp_dir):
             logger.info(f"Cleaning up temporary files at {temp_dir}...")
             try:
@@ -78,6 +117,20 @@ class FileUtils:
 
     @staticmethod
     def zip_file_content(repo_path: str, file_content: Dict[str, str], key: str) -> str:
+        """
+        Writes file contents to a directory and creates a zip archive.
+
+        Args:
+            repo_path (str): Path to the repository.
+            file_content (Dict[str, str]): Dictionary of file paths and their contents.
+            key (str): Subdirectory name for storing files.
+
+        Returns:
+            str: Path to the created zip archive.
+
+        Raises:
+            Exception: If an error occurs during zipping.
+        """
         try:
             destination_folder = os.path.join(repo_path, key)
             os.makedirs(destination_folder, exist_ok=True)
