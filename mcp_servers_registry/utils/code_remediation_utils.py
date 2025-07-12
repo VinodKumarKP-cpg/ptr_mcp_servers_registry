@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 import time
@@ -16,6 +17,7 @@ for path in path_list:
 
 MODEL_ID = os.environ.get('MODEL_ID', 'us.anthropic.claude-3-5-haiku-20241022-v1:0')
 
+
 from utils.aws_utils import AWSUtils
 from utils.batch_utils import BatchUtils
 from utils.file_utils import FileUtils
@@ -30,7 +32,6 @@ logger = get_logger()
 class CodeRemediationUtils:
     """Agent to analyze and remediate code in git repositories."""
     RESULTS_BUCKET = os.environ['RESULTS_BUCKET']
-
     def __init__(self, model_id: str = MODEL_ID):
         """Initialize the agent with required configuration.
 

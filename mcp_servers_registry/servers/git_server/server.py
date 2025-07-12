@@ -28,7 +28,6 @@ class GitToolsServer(BaseMCPServer):
         """
         super().__init__(self.base_directory(__file__), object_list=[GitUtils()])
 
-
 def main():
     """Main function to run the Git tools server."""
     server = GitToolsServer()

@@ -12,7 +12,6 @@ MAX_FILE_SIZE = 100000
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 class FileUtils:
     @staticmethod
     def read_file_content(repo_path: str, file_path: str, max_size: int = None) -> str:

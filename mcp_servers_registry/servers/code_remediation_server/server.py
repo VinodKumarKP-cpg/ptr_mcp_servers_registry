@@ -28,7 +28,6 @@ class CodeRemediationServer(BaseMCPServer):
         """
         super().__init__(self.base_directory(__file__), object_list=[CodeRemediationUtils()])
 
-
 def main():
     """Main function to run the Code Remediation server."""
     server = CodeRemediationServer()

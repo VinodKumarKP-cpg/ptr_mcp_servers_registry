@@ -2,10 +2,9 @@ import argparse
 import json
 import os
 import sys
-from abc import ABC
+from abc import ABC, abstractmethod
 from inspect import ismethod, isfunction, getmembers
 from typing import Literal, List
-
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
@@ -55,6 +54,7 @@ class BaseMCPServer(ABC):
         self.object_list = object_list
         self._register_tools()
 
+
     def get_server_config(self):
         """
         Get the server configuration from server_config.json using the server name
@@ -83,6 +83,7 @@ class BaseMCPServer(ABC):
             if method_name.startswith('_'):
                 continue
             self.mcp.tool()(method)
+
 
     def _register_tools(self):
         """Abstract method to register tools. Must be implemented by subclasses."""
