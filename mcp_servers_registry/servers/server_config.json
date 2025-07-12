@@ -3,6 +3,9 @@
     "port": 8000
   },
   "code_remediation_server": {
-    "port": 8001
+    "port": 8001,
+    "environment": {
+      "RESULTS_BUCKET": "${RESULTS_BUCKET}"
+    }
   }
 }
