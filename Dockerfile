@@ -10,10 +10,11 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     unzip \
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"\
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf /var/lib/apt/lists/*
+    && mkdir -p /tmp/awscli \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscli/awscliv2.zip" \
+    && unzip /tmp/awscli/awscliv2.zip -d /tmp/awscli \
+    && /tmp/awscli/aws/install \
+    && rm -rf /tmp/awscli /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt pyproject.toml ./
@@ -26,19 +27,13 @@ COPY MANIFEST.in ./
 # Install the package in development mode
 RUN pip install -e .
 
-# Create entrypoint script (as root)
-RUN cat > /app/entrypoint.sh << 'EOF'
-#!/bin/bash
-if [ -z "$MCP_SERVER_NAME" ]; then
-    echo "Error: MCP_SERVER_NAME environment variable is required"
-    exit 1
-fi
-exec python -m mcp_servers_registry.servers.${MCP_SERVER_NAME}.server "$@"
-EOF
+COPY entrypoint.sh /app/entrypoint.sh
 
 # Make script executable and set ownership
 RUN chmod +x /app/entrypoint.sh && \
     git config --system url.https://oauth2:${GITHUB_TOKEN}@github.com/Capgemini-Innersource.insteadOf https://github.com/Capgemini-Innersource
+
+ENV GITHUB_TOKEN=${GITHUB_TOKEN}
 
 # Create a non-root user and change ownership
 RUN useradd -m -u 1000 mcpuser && chown -R mcpuser:mcpuser /app
