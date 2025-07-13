@@ -102,7 +102,7 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
 
 3. **Or start a specific service:**
    ```bash
-   make start-git-server
+   make start-git_server
    ```
 
 4. **List available services:**
@@ -115,7 +115,8 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
    ```json
    {
      "git-server": {
-       "url": "http://localhost:8000/mcp"
+       "command":"npx",
+    	"args":["mcp-remote@latest","http://localhost:8000/mcp", "--allow-http"]
      }
    }
    ```
