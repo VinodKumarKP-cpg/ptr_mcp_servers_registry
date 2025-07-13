@@ -34,7 +34,10 @@ def generate_service_config(service_name: str, config: dict) -> dict:
     return {
         'build': {
             'context': '.',
-            'dockerfile': 'Dockerfile'
+            'dockerfile': 'Dockerfile',
+            'args': {
+                 'GITHUB_TOKEN': '${GITHUB_TOKEN}'
+            }
         },
         'container_name': f'mcp-{service_name.replace("_", "-")}',
         'ports': [f"{port}:{port}"],

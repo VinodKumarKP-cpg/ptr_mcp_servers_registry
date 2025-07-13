@@ -32,7 +32,7 @@ define RUN_DOCKER_COMPOSE
  $(MAKE) generate-compose
  echo "Executing compose up";
  @if [ -z "$(1)" ]; then \
-  docker compose up -d --build; \
+  docker compose up -d --build --force-recreate; \
  else \
   docker compose up -d $(1) --build; \
  fi;
@@ -54,7 +54,7 @@ uninstall:
 	pip uninstall mcp-server-registry
 
 docker-build:
-	docker build -f Dockerfile . -t mcp_server
+	docker build -f Dockerfile . -t mcp_server --build-arg GITHUB_TOKEN=$$GITHUB_TOKEN
 
 generate-compose:
 	python docker_compose_generator.py

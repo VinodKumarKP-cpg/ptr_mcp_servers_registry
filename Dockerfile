@@ -1,6 +1,7 @@
 # Runtime Generic Dockerfile for MCP Servers
 FROM python:3.11-slim
 
+ARG GITHUB_TOKEN
 # Set working directory
 WORKDIR /app
 
@@ -32,7 +33,8 @@ exec python -m mcp_servers_registry.servers.${MCP_SERVER_NAME}.server "$@"
 EOF
 
 # Make script executable and set ownership
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh && \
+    git config --system url.https://oauth2:${GITHUB_TOKEN}@github.com/Capgemini-Innersource.insteadOf https://github.com/Capgemini-Innersource
 
 # Create a non-root user and change ownership
 RUN useradd -m -u 1000 mcpuser && chown -R mcpuser:mcpuser /app
