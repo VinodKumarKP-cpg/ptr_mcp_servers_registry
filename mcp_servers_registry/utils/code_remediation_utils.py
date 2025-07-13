@@ -50,18 +50,20 @@ class CodeRemediationUtils:
             raise ValueError("MODEL_ID environment variable is not set")
 
     def analyze_repository(self,
-                           repo_directory: str = None,
-                           git_url: str = None,
-                           branch: str = None,
-                           file_limit: int = 20,
-                           batch_size: int = 3,
-                           issue_flag: bool = True,
-                           remediated_code: bool = False,
+                           repo_directory: Optional[str] = None,
+                           git_url: Optional[str] = None,
+                           branch: Optional[str] = None,
+                           file_limit: Optional[int] = 20,
+                           batch_size: Optional[int] = 3,
+                           issue_flag: Optional[bool] = True,
+                           remediated_code: Optional[bool] = False,
                            file_list: Optional[List[str]] = None) -> Dict:
         """Analyze the repository for code issues.
 
         Args:
             repo_directory: Directory of the git repository to analyze
+            git_url: Optional git repository url
+            branch: Optional git branch
             file_limit: Maximum number of files to analyze
             batch_size: Number of files to analyze in one batch
             issue_flag: Flag to indicate if issues should be found
@@ -70,6 +72,7 @@ class CodeRemediationUtils:
 
         Returns:
             Dict containing analysis results
+            :param git_url:
         """
 
         if repo_directory is None and git_url is not None:
