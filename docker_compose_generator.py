@@ -70,7 +70,6 @@ def generate_docker_compose(server_config: dict) -> dict:
     # Environment variables are already handled per service in generate_service_config
 
     return {
-        'version': '3.8',
         'services': services,
         'networks': {
             'mcp-network': {
