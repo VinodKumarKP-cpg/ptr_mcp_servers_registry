@@ -227,20 +227,6 @@ def main():
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Quick Actions
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        st.header("⚡ Quick Actions")
-
-        if st.button("📋 Export Config", use_container_width=True):
-            st.download_button(
-                label="Download server_config.json",
-                data=json.dumps(server_config, indent=2),
-                file_name="server_config.json",
-                mime="application/json"
-            )
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
     # Main content area
     st.header("🌐 Available MCP Servers")
 
