@@ -67,7 +67,7 @@ stop-all:
 
 # List all discovered services
 list-services:
-	@echo "Discovered services:"
+	@echo "Available services:"
 	@for service in $(SERVICES); do \
 		echo "  - $$service" ; \
 	done
@@ -102,3 +102,4 @@ help:
 	@echo "  stop-<service>         Stop a specific service (replace <service> with name)"
 	@echo "  restart-<service>      Restart a specific service (replace <service> with name)"
 	@echo "  generate-compose       Generate docker compose"
+	$(MAKE) list-services
