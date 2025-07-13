@@ -57,7 +57,7 @@ docker-build:
 	docker build -f Dockerfile . -t mcp_server --build-arg GITHUB_TOKEN=$$GITHUB_TOKEN
 
 generate-compose:
-	python docker_compose_generator.py
+	python3 docker_compose_generator.py
 
 start-all:
 	$(call RUN_DOCKER_COMPOSE)
