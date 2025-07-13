@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import sys
 import time
@@ -17,7 +16,6 @@ for path in path_list:
 
 MODEL_ID = os.environ.get('MODEL_ID', 'us.anthropic.claude-3-5-haiku-20241022-v1:0')
 
-
 from utils.aws_utils import AWSUtils
 from utils.batch_utils import BatchUtils
 from utils.file_utils import FileUtils
@@ -32,6 +30,7 @@ logger = get_logger()
 class CodeRemediationUtils:
     """Agent to analyze and remediate code in git repositories."""
     RESULTS_BUCKET = os.environ['RESULTS_BUCKET']
+
     def __init__(self, model_id: str = MODEL_ID):
         """Initialize the agent with required configuration.
 
@@ -49,15 +48,33 @@ class CodeRemediationUtils:
         if not self.model_id:
             raise ValueError("MODEL_ID environment variable is not set")
 
-    def analyze_repository(self,
-                           repo_directory: Optional[str] = None,
-                           git_url: Optional[str] = None,
-                           branch: Optional[str] = None,
-                           file_limit: Optional[int] = 20,
-                           batch_size: Optional[int] = 3,
-                           issue_flag: Optional[bool] = True,
-                           remediated_code: Optional[bool] = False,
-                           file_list: Optional[List[str]] = None) -> Dict:
+    def analyze_repository(self, git_url: str, branch: str = "main", issue_flag=True, remediated_code=False) -> dict:
+        """
+        Analyze the specified git repository.
+
+        Args:
+            git_url: Git repository URL
+            branch: Branch to analyze (default: main)
+            issue_flag: Flag to indicate if issues should be found
+            remediated_code: Flag to indicate if remediated code should be returned
+
+        Returns:
+            dict: Analysis results
+        """
+        return self._analyze_repository(git_url=git_url,
+                                        branch=branch,
+                                        remediated_code=remediated_code,
+                                        issue_flag=issue_flag)
+
+    def _analyze_repository(self,
+                            repo_directory: Optional[str] = None,
+                            git_url: Optional[str] = None,
+                            branch: Optional[str] = None,
+                            file_limit: Optional[int] = 20,
+                            batch_size: Optional[int] = 3,
+                            issue_flag: Optional[bool] = True,
+                            remediated_code: Optional[bool] = False,
+                            file_list: Optional[List[str]] = None) -> Dict:
         """Analyze the repository for code issues.
 
         Args:
