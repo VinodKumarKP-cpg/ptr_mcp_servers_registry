@@ -78,10 +78,107 @@ Then configure your MCP client:
 }
 ```
 
+### Option 4: Local Docker Compose Setup
+
+You can run the MCP server registry locally using Docker Compose. This is ideal for development and testing purposes.
+
+#### Prerequisites
+- Docker and Docker Compose installed
+- Make utility installed
+- `jq` command-line JSON processor
+
+#### Setup Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
+   cd ptr_mcp_servers_registry
+   ```
+
+2. **Build and start all services:**
+   ```bash
+   make start-all
+   ```
+
+3. **Or start a specific service:**
+   ```bash
+   make start-git-server
+   ```
+
+4. **List available services:**
+   ```bash
+   make list-services
+   ```
+
+5. **Configure your client to use the local server:**
+   In your client configuration (e.g., Claude Desktop), add the server with the local URL:
+   ```json
+   {
+     "git-server": {
+       "url": "http://localhost:8000/mcp"
+     }
+   }
+   ```
+
+#### Available Make Commands
+
+- `make start-all` - Start all services using Docker Compose
+- `make stop-all` - Stop all services
+- `make start-<service>` - Start a specific service
+- `make stop-<service>` - Stop a specific service
+- `make restart-<service>` - Restart a specific service
+- `make list-services` - List all available services
+- `make docker-build` - Build the Docker image
+- `make generate-compose` - Generate Docker Compose file
+
+### Option 5: Remote Server Deployment
+
+For production use or when you want to share the MCP server with multiple users, you can deploy it to a remote server.
+
+#### Prerequisites
+- Remote server with Docker and Docker Compose installed
+- SSH access to the remote server
+- Domain name or public IP address
+
+#### Deployment Steps
+
+1. **Deploy to your remote server:**
+   ```bash
+   # SSH into your remote server
+   ssh user@your-remote-server.com
+   
+   # Clone the repository
+   git clone https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
+   cd ptr_mcp_servers_registry
+   
+   # Build and start services
+   make start-all
+   ```
+
+2. **Configure firewall (if needed):**
+   ```bash
+   # Allow traffic on port 8000
+   # Check the servers/server_config.json for the list of ports to be opened
+   sudo ufw allow 8000
+   ```
+
+3. **Configure your client to use the remote server:**
+   In your client configuration, use the remote server URL:
+   ```json
+   {
+     "git-server": {
+       "command":"npx",
+    	"args":["mcp-remote@latest","http://remote-ip:8000/mcp", "--allow-http"]
+     }
+   }
+   ```
+
 ## Configuration
 
 ### Claude Desktop
 Add to your `claude_desktop_config.json`:
+
+Using uv command
 
 ```json
 {
@@ -94,6 +191,19 @@ Add to your `claude_desktop_config.json`:
         "git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git",
         "git-mcp-server"
       ]
+    }
+  }
+}
+```
+
+Using npx command and remote server
+
+```json
+{
+  "mcpServers": {
+    "git-server": {
+      "command":"npx",
+    	"args":["mcp-remote@latest","http://<<remote-ip>>:8000/mcp", "--allow-http"]
     }
   }
 }
