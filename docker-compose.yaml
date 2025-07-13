@@ -53,19 +53,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  file_server:
+  aws_utils_server:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
-    container_name: mcp-file-server
+    container_name: mcp-aws-utils-server
     ports:
     - 8002:8002
     volumes:
     - ./logs:/tmp
     environment:
-    - MCP_SERVER_NAME=file_server
+    - MCP_SERVER_NAME=aws_utils_server
     command: --transport streamable-http
     restart: unless-stopped
     networks:

@@ -7,5 +7,8 @@
     "environment": {
       "RESULTS_BUCKET": "${RESULTS_BUCKET}"
     }
+  },
+  "aws_utils_server": {
+    "port": 8002
   }
 }
