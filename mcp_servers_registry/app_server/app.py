@@ -1,220 +1,222 @@
+"""
+MCP Server Dashboard
+
+A professional Streamlit application for monitoring and managing MCP servers.
+Provides real-time status monitoring, health checks, and configuration management.
+"""
+
 import json
 import os
-import streamlit as st
-from datetime import datetime
+import socket
 import subprocess
-import socket
-import requests
-from typing import Dict, Any, Optional
-
-import socket
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.settimeout(0)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.254.254.254', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 import requests
-
-def get_public_ip():
-    try:
-        response = requests.get('https://api.ipify.org')
-        response.raise_for_status()  # Raise an exception for bad status codes
-        return response.text
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting public IP: {e}")
-        return None
+import streamlit as st
 
 
-# Configure page
-st.set_page_config(
-    page_title="MCP Server Dashboard",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+class NetworkUtils:
+    """Utility class for network-related operations."""
 
-# Custom CSS for professional styling
-st.markdown("""
-<style>
-    .main-header {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
+    @staticmethod
+    def get_local_ip() -> str:
+        """Get the local IP address of the machine."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(0)
+        try:
+            # Connect to a dummy address to get local IP
+            sock.connect(('10.254.254.254', 1))
+            ip_address = sock.getsockname()[0]
+        except Exception:
+            ip_address = '127.0.0.1'
+        finally:
+            sock.close()
+        return ip_address
 
-    .main-header h1 {
-        color: white;
-        text-align: center;
-        margin: 0;
-        font-size: 2.5rem;
-    }
+    @staticmethod
+    def get_public_ip() -> Optional[str]:
+        """Get the public IP address using an external service."""
+        try:
+            response = requests.get('https://api.ipify.org', timeout=5)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.RequestException as e:
+            print(f"Error getting public IP: {e}")
+            return None
 
-    .server-card {
-        background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
-    }
-
-    .server-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin-left: 0.5rem;
-    }
-
-    .status-online {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .status-offline {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .metric-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
-        margin: 0.5rem;
-    }
-
-    .sidebar-section {
-        background: #f0f2f6;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-</style>
-""", unsafe_allow_html=True)
+    @staticmethod
+    def check_port_status(port: int, host: str = 'localhost') -> bool:
+        """Check if a port is open/accessible."""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                result = sock.connect_ex((host, port))
+                return result == 0
+        except Exception:
+            return False
 
 
-def check_port_status(port: int) -> bool:
-    """Check if a port is open/accessible"""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(1)
-            result = s.connect_ex(('localhost', port))
-            return result == 0
-    except:
-        return False
+class ServerHealthChecker:
+    """Handles server health monitoring and status checks."""
+
+    @staticmethod
+    def get_server_health(port: int, host: str = 'localhost') -> Dict[str, Any]:
+        """Get comprehensive server health information."""
+        try:
+            response = requests.get(f"http://{host}:{port}/health", timeout=2)
+            return {
+                "status": "healthy" if response.status_code == 200 else "unhealthy",
+                "response_time": response.elapsed.total_seconds(),
+                "status_code": response.status_code,
+                "timestamp": datetime.now().isoformat()
+            }
+        except requests.exceptions.RequestException:
+            return {
+                "status": "unreachable",
+                "response_time": None,
+                "status_code": None,
+                "timestamp": datetime.now().isoformat()
+            }
 
 
-def get_server_health(port: int) -> Dict[str, Any]:
-    """Get server health information"""
-    try:
-        response = requests.get(f"http://localhost:{port}/health", timeout=2)
-        return {
-            "status": "healthy" if response.status_code == 200 else "unhealthy",
-            "response_time": response.elapsed.total_seconds(),
-            "status_code": response.status_code
-        }
-    except:
-        return {
-            "status": "unreachable",
-            "response_time": None,
-            "status_code": None
-        }
+class ConfigurationManager:
+    """Manages server configuration loading and validation."""
+
+    def __init__(self):
+        self.file_root = os.path.dirname(os.path.abspath(__file__))
+        self.config_path = os.path.join(
+            os.path.dirname(self.file_root),
+            "servers",
+            "server_config.json"
+        )
+
+    def load_server_config(self) -> Dict[str, Any]:
+        """Load server configuration from JSON file."""
+        try:
+            with open(self.config_path, "r", encoding='utf-8') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            st.error(f"Configuration file not found: {self.config_path}")
+            return {}
+        except json.JSONDecodeError as e:
+            st.error(f"Invalid JSON in configuration file: {str(e)}")
+            return {}
+        except Exception as e:
+            st.error(f"Error loading server configuration: {str(e)}")
+            return {}
+
+    def load_readme(self, server_name: str) -> Optional[str]:
+        """Load README content for a specific server."""
+        try:
+            readme_path = os.path.join(
+                os.path.dirname(self.file_root),
+                "servers",
+                server_name,
+                "README.md"
+            )
+
+            if os.path.exists(readme_path):
+                with open(readme_path, "r", encoding='utf-8') as file:
+                    return file.read()
+            return None
+        except Exception as e:
+            st.error(f"Error loading README for {server_name}: {str(e)}")
+            return None
+
+    def validate_configuration(self, server_config: Dict[str, Any]) -> list:
+        """Validate server configuration and return results."""
+        validation_results = []
+
+        for server_name, server_info in server_config.items():
+            port = server_info.get('port')
+
+            if not port:
+                validation_results.append({
+                    'server': server_name,
+                    'status': 'error',
+                    'message': 'Missing port configuration'
+                })
+            elif not isinstance(port, int) or port < 1 or port > 65535:
+                validation_results.append({
+                    'server': server_name,
+                    'status': 'error',
+                    'message': f'Invalid port number ({port})'
+                })
+            else:
+                validation_results.append({
+                    'server': server_name,
+                    'status': 'success',
+                    'message': 'Valid configuration'
+                })
+
+        return validation_results
 
 
-def load_server_config() -> Dict[str, Any]:
-    """Load server configuration from JSON file"""
-    try:
-        file_root = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(os.path.dirname(file_root), "servers/server_config.json")
+class DashboardUI:
+    """Handles the Streamlit UI components and layout."""
 
-        with open(config_path, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        st.error(f"Error loading server configuration: {str(e)}")
-        return {}
+    def __init__(self):
+        self.config_manager = ConfigurationManager()
+        self.health_checker = ServerHealthChecker()
+        self.network_utils = NetworkUtils()
+        self._setup_page_config()
+        self._load_custom_css()
 
+    def _setup_page_config(self):
+        """Configure Streamlit page settings."""
+        st.set_page_config(
+            page_title="MCP Server Dashboard",
+            page_icon="🚀",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
 
-def load_readme(server_name: str) -> Optional[str]:
-    """Load README content for a server"""
-    try:
-        file_root = os.path.dirname(os.path.abspath(__file__))
-        readme_path = os.path.join(os.path.dirname(file_root), "servers", server_name, "README.md")
+    def _load_custom_css(self):
+        """Load custom CSS styles from external file."""
+        css_path = os.path.join(os.path.dirname(__file__), "style.css")
 
-        if os.path.exists(readme_path):
-            with open(readme_path, "r") as f:
-                return f.read()
-        return None
-    except Exception as e:
-        st.error(f"Error loading README for {server_name}: {str(e)}")
-        return None
+        try:
+            with open(css_path, "r", encoding='utf-8') as file:
+                st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            st.warning("style.css not found. Using default styling.")
 
+    def render_header(self):
+        """Render the main header section."""
+        st.markdown("""
+        <div class="main-header">
+            <h1>🚀 MCP Server Dashboard</h1>
+        </div>
+        """, unsafe_allow_html=True)
 
-def get_server_stats(server_config: Dict[str, Any]) -> Dict[str, int]:
-    """Get server statistics"""
-    total_servers = len(server_config)
-    online_servers = sum(1 for server in server_config.values()
-                         if check_port_status(server.get('port', 0)))
-    offline_servers = total_servers - online_servers
+    def render_sidebar(self, server_config: Dict[str, Any]):
+        """Render the sidebar with controls and statistics."""
+        with st.sidebar:
+            self._render_dashboard_controls()
+            self._render_server_statistics(server_config)
 
-    return {
-        "total": total_servers,
-        "online": online_servers,
-        "offline": offline_servers
-    }
-
-
-def main():
-    # Header
-    st.markdown("""
-    <div class="main-header">
-        <h1>🚀 MCP Server Dashboard</h1>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Load configuration
-    server_config = load_server_config()
-
-    if not server_config:
-        st.error("No server configuration found. Please check your server_config.json file.")
-        return
-
-    # Sidebar
-    with st.sidebar:
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    def _render_dashboard_controls(self):
+        """Render dashboard control section."""
+        # st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
         st.header("📊 Dashboard Controls")
 
-        # Auto-refresh option
         auto_refresh = st.checkbox("Auto-refresh (30s)", value=False)
         if auto_refresh:
             st.rerun()
 
-        # Manual refresh button
         if st.button("🔄 Refresh Now", use_container_width=True):
             st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        # st.markdown('</div>', unsafe_allow_html=True)
+        return auto_refresh
 
-        # Server Statistics
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+    def _render_server_statistics(self, server_config: Dict[str, Any]):
+        """Render server statistics section."""
+        # st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
         st.header("📈 Server Statistics")
-        stats = get_server_stats(server_config)
+
+        stats = self._get_server_stats(server_config)
 
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -223,111 +225,164 @@ def main():
             st.metric("Online", stats["online"])
         with col3:
             st.metric("Offline", stats["offline"])
-        st.markdown("<div>Host IP: {}</div>".format(get_public_ip()), unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Network information
+        public_ip = self.network_utils.get_public_ip()
+        local_ip = self.network_utils.get_local_ip()
 
-    # Main content area
-    st.header("🌐 Available MCP Servers")
+        st.markdown(f"<div>Public IP: {public_ip or 'Unknown'}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div>Local IP: {local_ip}</div>", unsafe_allow_html=True)
 
-    # Create tabs for different views
-    tab1, tab2 = st.tabs(["📋 Server List", "🔧 Configuration"])
+        # st.markdown('</div>', unsafe_allow_html=True)
 
-    with tab1:
-        # Server cards
+    def _get_server_stats(self, server_config: Dict[str, Any]) -> Dict[str, int]:
+        """Calculate server statistics."""
+        total_servers = len(server_config)
+        online_servers = sum(
+            1 for server in server_config.values()
+            if self.network_utils.check_port_status(server.get('port', 0))
+        )
+        offline_servers = total_servers - online_servers
+
+        return {
+            "total": total_servers,
+            "online": online_servers,
+            "offline": offline_servers
+        }
+
+    def render_main_content(self, server_config: Dict[str, Any]):
+        """Render the main content area."""
+        st.header("🌐 Available MCP Servers")
+
+        tab1, tab2 = st.tabs(["📋 Server List", "🔧 Configuration"])
+
+        with tab1:
+            self._render_server_list(server_config)
+
+        with tab2:
+            self._render_configuration_tab(server_config)
+
+    def _render_server_list(self, server_config: Dict[str, Any]):
+        """Render the server list tab."""
         for server_name, server_info in server_config.items():
             port = server_info.get('port', 0)
-            is_online = check_port_status(port)
+            is_online = self.network_utils.check_port_status(port)
 
-            # Create expandable server card
-            with st.expander(f"🖥️ {server_name.replace('_', ' ').title()}", expanded=False):
-                col1, col2 = st.columns([2, 1])
+            display_name = server_name.replace('_', ' ').title()
 
-                with col1:
-                    # Server details
-                    st.subheader("Server Information")
-                    st.write(f"**Port:** {port}")
+            with st.expander(f"🖥️ {display_name}", expanded=False):
+                self._render_server_card(server_name, server_info, is_online)
 
-                    # Environment variables
-                    env_vars = server_info.get('environment', {})
-                    if env_vars:
-                        st.write("**Environment Variables:**")
-                        for key, value in env_vars.items():
-                            st.write(f"  - `{key}`: {value}")
+    def _render_server_card(self, server_name: str, server_info: Dict[str, Any], is_online: bool):
+        """Render an individual server card."""
+        port = server_info.get('port', 0)
 
-                    # Server health
-                    health = get_server_health(port)
-                    st.write(f"**Health Status:** {health['status']}")
-                    if health['response_time']:
-                        st.write(f"**Response Time:** {health['response_time']:.3f}s")
+        col1, col2 = st.columns([2, 1])
 
-                with col2:
-                    # Status badge
-                    status_class = "status-online" if is_online else "status-offline"
-                    status_text = "🟢 Online" if is_online else "🔴 Offline"
-                    st.markdown(f"""
-                    <div class="status-badge {status_class}">
-                        {status_text}
-                    </div>
-                    """, unsafe_allow_html=True)
+        with col1:
+            st.subheader("Server Information")
+            st.write(f"**Port:** {port}")
 
-                    # Quick actions
-                    st.write("**Quick Actions:**")
+            # Environment variables
+            env_vars = server_info.get('environment', {})
+            if env_vars:
+                st.write("**Environment Variables:**")
+                for key, value in env_vars.items():
+                    st.write(f"  - `{key}`: {value}")
 
-                    if st.button(f"📊 Test Connection", key=f"test_{server_name}"):
-                        if is_online:
-                            st.success("✅ Connection successful!")
-                        else:
-                            st.error("❌ Connection failed!")
+            # Server health
+            health = self.health_checker.get_server_health(port)
+            st.write(f"**Health Status:** {health['status']}")
+            if health['response_time']:
+                st.write(f"**Response Time:** {health['response_time']:.3f}s")
 
-                # README content
-                readme_content = load_readme(server_name)
-                if readme_content:
-                    st.subheader("📖 Documentation")
-                    with st.popover("Documentation"):
-                        st.markdown(readme_content)
+        with col2:
+            # Status badge
+            status_class = "status-online" if is_online else "status-offline"
+            status_text = "🟢 Online" if is_online else "🔴 Offline"
+            st.markdown(f"""
+            <div class="status-badge {status_class}">
+                {status_text}
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Quick actions
+            st.write("**Quick Actions:**")
+
+            if st.button(f"📊 Test Connection", key=f"test_{server_name}"):
+                if is_online:
+                    st.success("✅ Connection successful!")
                 else:
-                    st.info("No README.md found for this server.")
+                    st.error("❌ Connection failed!")
 
-    with tab2:
+        # README content
+        self._render_readme_section(server_name)
+
+    def _render_readme_section(self, server_name: str):
+        """Render the README section for a server."""
+        readme_content = self.config_manager.load_readme(server_name)
+        if readme_content:
+            st.subheader("📖 Documentation")
+            with st.popover("View Documentation"):
+                st.markdown(readme_content)
+        else:
+            st.info("No README.md found for this server.")
+
+    def _render_configuration_tab(self, server_config: Dict[str, Any]):
+        """Render the configuration tab."""
         st.subheader("⚙️ Server Configuration")
 
-        # Display configuration in a formatted way
+        # Display configuration
         st.json(server_config)
 
         # Configuration validation
         st.subheader("🔍 Configuration Validation")
 
-        validation_results = []
-        for server_name, server_info in server_config.items():
-            port = server_info.get('port')
-            if not port:
-                validation_results.append(f"❌ {server_name}: Missing port configuration")
-            elif not isinstance(port, int) or port < 1 or port > 65535:
-                validation_results.append(f"❌ {server_name}: Invalid port number ({port})")
-            else:
-                validation_results.append(f"✅ {server_name}: Valid configuration")
+        validation_results = self.config_manager.validate_configuration(server_config)
 
         for result in validation_results:
-            if "❌" in result:
-                st.error(result)
+            if result['status'] == 'error':
+                st.error(f"❌ {result['server']}: {result['message']}")
             else:
-                st.success(result)
+                st.success(f"✅ {result['server']}: {result['message']}")
 
-    # Footer
-    st.markdown("---")
-    st.markdown(f"""
-    <div style="text-align: center; color: #666; padding: 1rem;">
-        Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | 
-        MCP Server Dashboard v1.0
-    </div>
-    """, unsafe_allow_html=True)
+    def render_footer(self):
+        """Render the footer section."""
+        st.markdown("---")
+        st.markdown(f"""
+        <div style="text-align: center; color: #666; padding: 1rem;">
+            Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | 
+            MCP Server Dashboard v1.0
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Auto-refresh mechanism
-    if auto_refresh:
-        import time
-        time.sleep(30)
-        st.rerun()
+    def run(self):
+        """Main application entry point."""
+        self.render_header()
+
+        # Load configuration
+        server_config = self.config_manager.load_server_config()
+
+        if not server_config:
+            st.error("No server configuration found. Please check your server_config.json file.")
+            return
+
+        # Render UI components
+        auto_refresh = self.render_sidebar(server_config)
+        self.render_main_content(server_config)
+        self.render_footer()
+
+        # Auto-refresh mechanism
+        if auto_refresh:
+            import time
+            time.sleep(30)
+            st.rerun()
+
+
+def main():
+    """Application entry point."""
+    dashboard = DashboardUI()
+    dashboard.run()
 
 
 if __name__ == "__main__":
