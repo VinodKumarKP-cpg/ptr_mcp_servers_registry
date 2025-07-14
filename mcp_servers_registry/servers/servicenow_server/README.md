@@ -23,18 +23,26 @@ A comprehensive Model Context Protocol (MCP) server that provides ServiceNow inc
 ## Installation
 
 ### Prerequisites
-- ServiceNow instance access
+- ServiceNow instance access with API permissions
 - Valid ServiceNow credentials (username/password)
 - Python 3.11+
 
 ### Environment Configuration
 Set up your ServiceNow credentials as environment variables:
+
+**Linux/Mac:**
 ```bash
 export SERVICENOW_USER="your_username"
 export SERVICENOW_PASSWORD="your_password"
 ```
 
-Or create a `.env` file:
+**Windows:**
+```cmd
+set SERVICENOW_USER=your_username
+set SERVICENOW_PASSWORD=your_password
+```
+
+**Or create a `.env` file:**
 ```
 SERVICENOW_USER=your_username
 SERVICENOW_PASSWORD=your_password
@@ -91,62 +99,6 @@ Then configure your MCP client:
       "--directory",
       "/path/to/ptr_mcp_servers_registry",
       "servicenow-mcp-server"
-    ]
-  }
-}
-```
-
-### Option 1: Direct UV Run (Recommended)
-Use uv to run the server directly without local installation:
-
-```json
-{
-  "git-server": {
-    "command": "uv",
-    "args": [
-      "run",
-      "--with",
-      "git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git",
-      "git-mcp-server"
-    ]
-  }
-}
-```
-
-### Option 2: Pip Install + Run
-Install the package first, then run the server:
-
-```bash
-pip install git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
-```
-
-Then configure your MCP client:
-```json
-{
-  "git-server": {
-    "command": "git-mcp-server",
-    "args": []
-  }
-}
-```
-
-### Option 3: Local Clone + UV Run
-Clone the repository locally and run with uv:
-
-```bash
-git clone https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
-```
-
-Then configure your MCP client:
-```json
-{
-  "git-server": {
-    "command": "uv",
-    "args": [
-      "run",
-      "--directory",
-      "/path/to/ptr_mcp_servers_registry",
-      "git-mcp-server"
     ]
   }
 }
@@ -264,8 +216,7 @@ For production use or when you want to share the MCP server with multiple users,
 ### Claude Desktop
 Add to your `claude_desktop_config.json`:
 
-Using uv command
-
+**Using uv command (Recommended):**
 ```json
 {
   "mcpServers": {
@@ -286,223 +237,159 @@ Using uv command
 }
 ```
 
-Using npx command and remote server
-
+**Using remote server:**
 ```json
 {
   "mcpServers": {
     "servicenow-server": {
-      "command":"npx",
-    	"args":["mcp-remote@latest","http://<<remote-ip>>:8003/mcp", "--allow-http"]
+      "command": "npx",
+      "args": ["mcp-remote@latest", "http://your-server:8003/mcp", "--allow-http"]
     }
   }
 }
 ```
 
-### Other MCP Clients
-The server follows the standard MCP protocol and can be integrated with any MCP-compatible client using the installation methods above.
-
-### ServiceNow Configuration
-- **Base URL**: Update `SERVICENOW_BASE_URL` in the code to match your ServiceNow instance
+### ServiceNow Instance Configuration
+- **Base URL**: Update `SERVICENOW_BASE_URL` in the utils code to match your ServiceNow instance
 - **Authentication**: Uses basic authentication with username/password
-- **API Access**: Ensure your ServiceNow user has appropriate permissions for incident management
+- **API Permissions**: Ensure your ServiceNow user has appropriate permissions:
+  - `incident` table read/write access
+  - API access enabled
+  - `sys_user` table read access (for assignments)
 
 ## Available Tools
 
-### Incident Management
+### Core Incident Management
 
-#### `get_servicenow_incidents`
-Fetch incidents from ServiceNow with customizable query filters.
-- **Parameters:**
-  - `query` (string, optional): ServiceNow query string (default: "active=true")
-- **Returns:** Dictionary containing list of incidents matching the query
-- **Example queries:**
-  - `"active=true"` - Get all active incidents
-  - `"priority=1"` - Get high priority incidents
-  - `"assigned_to=user_sys_id"` - Get incidents assigned to specific user
-
-#### `create_servicenow_incident`
-Create a new incident in ServiceNow.
-- **Parameters:**
-  - `short_description` (string): Short description for the incident
-  - `description` (string, optional): Detailed description
-- **Returns:** Dictionary containing the created incident details
-
-#### `update_servicenow_incident`
-Update an existing incident with flexible field modifications.
-- **Parameters:**
-  - `incident_id` (string): The sys_id of the incident to update
-  - `update_data` (dict): Dictionary containing fields to update
-- **Returns:** Dictionary containing the updated incident
-- **Common update fields:**
-  - `state`: Incident state (1=New, 2=In Progress, 3=On Hold, 6=Resolved, 7=Closed)
-  - `priority`: Priority level (1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning)
-  - `assigned_to`: User sys_id for assignment
-  - `work_notes`: Internal work notes
-
-#### `get_servicenow_incident_by_id`
-Get detailed information for a specific incident.
-- **Parameters:**
-  - `incident_id` (string): The sys_id of the incident to retrieve
-- **Returns:** Dictionary containing detailed incident information
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `get_servicenow_incidents` | Fetch incidents with filters | `query` (optional) |
+| `create_servicenow_incident` | Create new incidents | `short_description`, `description` |
+| `update_servicenow_incident` | Update existing incidents | `incident_id`, `update_data` |
+| `get_servicenow_incident_by_id` | Get specific incident details | `incident_id` |
 
 ### Incident Operations
 
-#### `servicenow_incident_add_comment`
-Add comments or work notes to existing incidents.
-- **Parameters:**
-  - `incident_id` (string): The sys_id of the incident
-  - `comment` (string): The comment text to add
-  - `comment_type` (string, optional): Type of comment - "work_notes" (internal) or "comments" (customer visible)
-- **Returns:** Dictionary containing the updated incident
-
-#### `servicenow_resolve_incident`
-Resolve incidents with resolution details and close codes.
-- **Parameters:**
-  - `incident_id` (string): The sys_id of the incident to resolve
-  - `resolution_notes` (string): Notes describing how the incident was resolved
-  - `close_code` (string, optional): Close code (default: "Solved (Permanently)")
-- **Returns:** Dictionary containing the resolved incident
-- **Common close codes:**
-  - "Solved (Permanently)"
-  - "Solved (Workaround)"
-  - "Not Solved (Not Reproducible)"
-  - "Closed/Resolved by Caller"
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `servicenow_incident_add_comment` | Add comments/work notes | `incident_id`, `comment`, `comment_type` |
+| `servicenow_resolve_incident` | Resolve incidents | `incident_id`, `resolution_notes`, `close_code` |
 
 ### System Operations
 
-#### `check_servicenow_health`
-Check ServiceNow API connectivity and health status.
-- **Parameters:** None
-- **Returns:** Dictionary containing health status and connection details
+| Tool | Purpose | Parameters |
+|------|---------|------------|
+| `check_servicenow_health` | Check API connectivity | None |
+
+### Tool Details
+
+#### `get_servicenow_incidents`
+- **Query Examples:**
+  - `"active=true"` - Active incidents
+  - `"priority=1"` - Critical priority
+  - `"assigned_to=user_sys_id"` - Assigned to user
+  - `"state=2^priority=1"` - In progress AND critical
+
+#### `servicenow_incident_add_comment`
+- **Comment Types:**
+  - `"work_notes"` - Internal notes (default)
+  - `"comments"` - Customer-visible comments
+
+#### `servicenow_resolve_incident`
+- **Common Close Codes:**
+  - `"Solved (Permanently)"` (default)
+  - `"Solved (Workaround)"`
+  - `"Not Solved (Not Reproducible)"`
+  - `"Closed/Resolved by Caller"`
+
+#### `update_servicenow_incident`
+- **Common Fields:**
+  - `state`: 1=New, 2=In Progress, 3=On Hold, 6=Resolved, 7=Closed
+  - `priority`: 1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning
+  - `assigned_to`: User sys_id
+  - `work_notes`: Internal notes
 
 
 ## Usage Examples
 
-### Basic Incident Management
+### Complete Incident Lifecycle
 ```python
-# Get all active incidents
-incidents = await get_servicenow_incidents("active=true")
-
-# Create a new incident
-new_incident = await create_servicenow_incident(
+# 1. Create incident
+incident = await create_servicenow_incident(
     "Email server down", 
     "Users unable to access email since 9 AM"
 )
+incident_id = incident['result']['sys_id']
 
-# Get specific incident details
-incident_details = await get_servicenow_incident_by_id("abc123def456")
-
-# Update incident priority
-updated_incident = await update_servicenow_incident(
-    "abc123def456", 
-    {"priority": "1", "state": "2"}
-)
-```
-
-### Adding Comments and Resolving
-```python
-# Add internal work note
+# 2. Add work note
 await servicenow_incident_add_comment(
-    "abc123def456",
-    "Investigated the issue, found root cause in email configuration",
+    incident_id,
+    "Investigating root cause - checking server logs",
     "work_notes"
 )
 
-# Add customer-visible comment
+# 3. Update status and assign
+await update_servicenow_incident(incident_id, {
+    "state": "2",  # In Progress
+    "priority": "2",  # High
+    "assigned_to": "user_sys_id"
+})
+
+# 4. Add customer comment
 await servicenow_incident_add_comment(
-    "abc123def456",
+    incident_id,
     "We are working on resolving your email access issue",
     "comments"
 )
 
-# Resolve the incident
-resolved_incident = await servicenow_resolve_incident(
-    "abc123def456",
+# 5. Resolve incident
+await servicenow_resolve_incident(
+    incident_id,
     "Issue resolved by restarting email service and updating configuration",
     "Solved (Permanently)"
 )
 ```
 
-### Advanced Queries
+### Query and Search Operations
 ```python
-# Get high priority incidents assigned to specific user
-high_priority = await get_servicenow_incidents(
-    "priority=1^assigned_to=user_sys_id"
-)
+# Get critical incidents
+critical = await get_servicenow_incidents("priority=1^state!=6^state!=7")
 
-# Get incidents updated in last 24 hours
-recent_updates = await get_servicenow_incidents(
-    "sys_updated_on>javascript:gs.daysAgoStart(1)"
-)
+# Get my assigned incidents  
+my_incidents = await get_servicenow_incidents("assigned_to=my_user_sys_id^active=true")
+
+# Get recent incidents
+recent = await get_servicenow_incidents("sys_created_on>javascript:gs.daysAgoStart(7)")
 
 # Check system health
-health_status = await check_servicenow_health()
+status = await check_servicenow_health()
 ```
 
-## Error Handling
+## Error Handling & Requirements
 
-The server includes comprehensive error handling for common ServiceNow operations:
-- Invalid incident IDs or sys_ids
-- Network connectivity issues to ServiceNow instance
-- Authentication failures
-- Permission errors for specific operations
-- Invalid field values or data formats
-- ServiceNow API rate limiting
+### Common Error Scenarios
+- **Authentication**: Invalid credentials or expired sessions
+- **Authorization**: Insufficient permissions for incident operations
+- **Network**: Connectivity issues to ServiceNow instance
+- **Data**: Invalid field values, missing required fields, or malformed requests
+- **Rate Limiting**: ServiceNow API throttling
 
-All errors are logged and returned with descriptive messages to help with debugging.
+### System Requirements
+- **Python**: 3.11+ with `requests` library
+- **ServiceNow Access**: Instance URL, valid credentials, API permissions
+- **Network**: HTTPS connectivity to ServiceNow instance
+- **Permissions**: `incident` table read/write, `sys_user` table read access
 
-## ServiceNow Field Reference
+### Security Best Practices
+- Store credentials in environment variables (never in code)
+- Use HTTPS for all ServiceNow communications
+- Implement proper ServiceNow role-based access controls
+- Regularly rotate passwords and monitor API usage
+- Enable ServiceNow audit logging for API operations
 
-### Common Incident States
-- `1` - New
-- `2` - In Progress
-- `3` - On Hold
-- `6` - Resolved
-- `7` - Closed
+## License & Contributing
 
-### Priority Levels
-- `1` - Critical
-- `2` - High  
-- `3` - Moderate
-- `4` - Low
-- `5` - Planning
+This MCP server is part of the [Capgemini Innersource MCP Servers Registry](https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry). 
 
-### Important Fields
-- `sys_id` - Unique identifier for the incident
-- `number` - Human-readable incident number
-- `short_description` - Brief description of the incident
-- `description` - Detailed description
-- `state` - Current state of the incident
-- `priority` - Priority level
-- `assigned_to` - User assigned to the incident
-- `caller_id` - User who reported the incident
-- `work_notes` - Internal notes (not visible to caller)
-- `comments` - Customer-visible comments
-- `close_notes` - Resolution details
-- `close_code` - Reason for closure
-
-## Requirements
-
-- Python 3.11+
-- ServiceNow instance access
-- Valid ServiceNow user credentials with incident management permissions
-- Network access to ServiceNow instance
-- `requests` library for HTTP operations
-
-## License
-
-This MCP server is part of the Capgemini Innersource MCP Servers Registry. Please refer to the repository for licensing information.
-
-## Contributing
-
-This server is maintained as part of the larger MCP servers registry. For issues, feature requests, or contributions, please visit the [main repository](https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry).
-
-## Security Considerations
-
-- Store ServiceNow credentials securely using environment variables
-- Use HTTPS for all ServiceNow API communications
-- Implement proper access controls in ServiceNow for the API user
-- Regularly rotate ServiceNow passwords
-- Monitor API usage and access logs
+For issues, feature requests, or contributions, please visit the main repository.
 
