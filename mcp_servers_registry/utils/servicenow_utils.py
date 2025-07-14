@@ -27,6 +27,10 @@ class ServiceNowUtils:
                 response = requests.get(url, params=params, auth=auth, headers=headers, timeout=30)
             elif method == "POST":
                 response = requests.post(url, json=data, auth=auth, headers=headers, timeout=30)
+            elif method == "PUT":
+                response = requests.put(url, json=data, auth=auth, headers=headers, timeout=30)
+            elif method == "PATCH":
+                response = requests.patch(url, json=data, auth=auth, headers=headers, timeout=30)
             else:
                 raise Exception(f"Unsupported HTTP method: {method}")
             response.raise_for_status()
@@ -61,10 +65,73 @@ class ServiceNowUtils:
         """
         endpoint = f"/table/incident"
         data = {"short_description": short_description, "description": description}
-        return self.__dict___make_servicenow_request(endpoint, method="POST", data=data)
+        return self._make_servicenow_request(endpoint, method="POST", data=data)
 
 
-   
+    def update_servicenow_incident(self, incident_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update an existing incident in ServiceNow.
+        Args:
+            incident_id: The sys_id of the incident to update
+            update_data: Dictionary containing fields to update (e.g., state, priority, assigned_to, etc.)
+        Returns:
+            Dictionary containing the updated incident
+        """
+        endpoint = f"/table/incident/{incident_id}"
+        return self._make_servicenow_request(endpoint, method="PUT", data=update_data)
+
+
+    def get_servicenow_incident_by_id(self, incident_id: str) -> Dict[str, Any]:
+        """
+        Get a specific incident from ServiceNow by its sys_id.
+        Args:
+            incident_id: The sys_id of the incident to retrieve
+        Returns:
+            Dictionary containing the incident details
+        """
+        endpoint = f"/table/incident/{incident_id}"
+        return self._make_servicenow_request(endpoint)
+
+
+    def servicenow_incident_add_comment(self, incident_id: str, comment: str, comment_type: str = "work_notes") -> Dict[str, Any]:
+        """
+        Add a comment or work note to an existing ServiceNow incident.
+        Args:
+            incident_id: The sys_id of the incident to add comment to
+            comment: The comment text to add
+            comment_type: Type of comment - either "work_notes" (internal) or "comments" (customer visible)
+        Returns:
+            Dictionary containing the updated incident
+        """
+        if comment_type not in ["work_notes", "comments"]:
+            return {"error": True, "message": "comment_type must be either 'work_notes' or 'comments'"}
+        
+        endpoint = f"/table/incident/{incident_id}"
+        update_data = {comment_type: comment}
+        return self._make_servicenow_request(endpoint, method="PUT", data=update_data)
+
+
+    def servicenow_resolve_incident(self, incident_id: str, resolution_notes: str, close_code: str = "Solved (Permanently)") -> Dict[str, Any]:
+        """
+        Resolve a ServiceNow incident by setting it to resolved state.
+        Args:
+            incident_id: The sys_id of the incident to resolve
+            resolution_notes: Notes describing how the incident was resolved
+            close_code: The close code for the incident (default: "Solved (Permanently)")
+        Returns:
+            Dictionary containing the updated incident
+        """
+        endpoint = f"/table/incident/{incident_id}"
+        update_data = {
+            "state": "6",  # 6 = Resolved state in ServiceNow
+            "close_notes": resolution_notes,
+            "close_code": close_code,
+            "resolved_at": "javascript:gs.nowDateTime()",  # Current timestamp
+            "work_notes": f"Incident resolved: {resolution_notes}"
+        }
+        return self._make_servicenow_request(endpoint, method="PUT", data=update_data)
+
+
     def check_servicenow_health(self) -> Dict[str, Any]:
         """
         Check if the ServiceNow API is reachable.
