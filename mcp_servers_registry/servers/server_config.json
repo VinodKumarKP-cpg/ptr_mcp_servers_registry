@@ -10,5 +10,8 @@
   },
   "aws_utils_server": {
     "port": 8002
+  },
+  "servicenow_server": {
+    "port": 8003
   }
 }
