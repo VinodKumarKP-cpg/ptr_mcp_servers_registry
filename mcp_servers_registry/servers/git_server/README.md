@@ -281,6 +281,89 @@ Get detailed contributor statistics.
   - `repo_path` (string): Path to the Git repository
 - **Returns:** Dictionary with contributor statistics
 
+## ReAct flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent as ReAcT Agent
+    participant MCP as MCP Server
+    participant GitUtils as GitUtils Class
+
+    User->>Agent: "Analyze repository https://github.com/user/repo"
+    
+    Note over Agent: REASONING: Need to analyze repository.<br/>First, I should validate and clone it.
+    
+    Agent->>MCP: validate_git_url(git_url)
+    MCP->>GitUtils: validate_git_url(git_url)
+    GitUtils-->>MCP: True/False
+    MCP-->>Agent: validation_result
+    
+    Note over Agent: ACTING: URL is valid, proceeding to clone
+    
+    Agent->>MCP: clone_repository(git_url, branch="main")
+    MCP->>GitUtils: clone_repository(git_url, branch)
+    GitUtils-->>MCP: repo_path
+    MCP-->>Agent: repo_path
+    
+    Note over Agent: REASONING: Repository cloned successfully.<br/>Now I need to gather comprehensive statistics.
+    
+    Agent->>MCP: get_git_stats(repo_path)
+    MCP->>GitUtils: get_git_stats(repo_path)
+    GitUtils-->>MCP: stats_dict
+    MCP-->>Agent: repository_stats
+    
+    Note over Agent: REASONING: Got basic stats. Now let me analyze<br/>the programming languages used.
+    
+    Agent->>MCP: identify_programming_languages(repo_path)
+    MCP->>GitUtils: identify_programming_languages(repo_path)
+    GitUtils-->>MCP: language_stats
+    MCP-->>Agent: language_analysis
+    
+    Note over Agent: REASONING: Language analysis complete.<br/>Let me get the repository structure.
+    
+    Agent->>MCP: get_repository_structure(repo_path, max_depth=3)
+    MCP->>GitUtils: get_repository_structure(repo_path, max_depth)
+    GitUtils-->>MCP: structure_dict
+    MCP-->>Agent: repo_structure
+    
+    Note over Agent: REASONING: Structure obtained. Now I need<br/>recent commit history for activity analysis.
+    
+    Agent->>MCP: get_commit_history(repo_path, limit=20, since_days=30)
+    MCP->>GitUtils: get_commit_history(repo_path, limit, since_days)
+    GitUtils-->>MCP: commits_list
+    MCP-->>Agent: recent_commits
+    
+    Note over Agent: REASONING: Commit history retrieved.<br/>Let me analyze contributor statistics.
+    
+    Agent->>MCP: get_contributor_stats(repo_path)
+    MCP->>GitUtils: get_contributor_stats(repo_path)
+    GitUtils-->>MCP: contributor_data
+    MCP-->>Agent: contributor_analysis
+    
+    Note over Agent: REASONING: All data collected. Let me search<br/>for any important commits (e.g., "fix", "bug").
+    
+    Agent->>MCP: search_commits(repo_path, "fix", limit=5)
+    MCP->>GitUtils: search_commits(repo_path, "fix", limit)
+    GitUtils-->>MCP: matching_commits
+    MCP-->>Agent: fix_commits
+    
+    Agent->>MCP: search_commits(repo_path, "feature", limit=5)
+    MCP->>GitUtils: search_commits(repo_path, "feature", limit)
+    GitUtils-->>MCP: matching_commits
+    MCP-->>Agent: feature_commits
+    
+    Note over Agent: REASONING: Analysis complete. Time to<br/>synthesize findings and clean up.
+    
+    Agent->>MCP: cleanup_repository(repo_path)
+    MCP->>GitUtils: cleanup_repository(repo_path)
+    GitUtils-->>MCP: cleanup_success
+    MCP-->>Agent: cleanup_result
+    
+    Note over Agent: REASONING: Cleanup done. Now I can provide<br/>a comprehensive analysis report.
+    
+    Agent->>User: **Repository Analysis Report**<br/><br/>📊 **Overview:**<br/>- Total commits: X<br/>- Contributors: Y<br/>- Primary language: Z<br/><br/>🏗️ **Structure:**<br/>- Directories: A<br/>- Files: B<br/><br/>👥 **Contributors:**<br/>- Most active: Name (X commits)<br/>- Recent activity: Last N days<br/><br/>📈 **Recent Activity:**<br/>- Latest commits focus on...<br/>- Bug fixes: X commits<br/>- New features: Y commits<br/><br/>💻 **Technology Stack:**<br/>- Primary: Language (X%)<br/>- Secondary: Language (Y%)<br/><br/>🔍 **Insights:**<br/>- Repository health assessment<br/>- Development patte
+```
+
 ## Usage Examples
 
 ### Basic Repository Analysis
@@ -338,3 +421,4 @@ This MCP server is part of the Capgemini Innersource MCP Servers Registry. Pleas
 ## Contributing
 
 This server is maintained as part of the larger MCP servers registry. For issues, feature requests, or contributions, please visit the [main repository](https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry).
+
