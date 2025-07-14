@@ -13,5 +13,8 @@
   },
   "servicenow_server": {
     "port": 8003
+  },
+  "jira_server": {
+    "port": 8004
   }
 }
