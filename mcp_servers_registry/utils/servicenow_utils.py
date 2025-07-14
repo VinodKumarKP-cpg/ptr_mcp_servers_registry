@@ -10,9 +10,9 @@ from typing import Dict, Any
 class ServiceNowUtils:
     
     # Configuration
-    SERVICENOW_BASE_URL = "https://dev203813.service-now.com/api/now"
+    SERVICENOW_BASE_URL = "https://dev275342.service-now.com/api/now"
     SERVICENOW_USER = os.getenv("SERVICENOW_USER", "admin")
-    SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD", "Pc8KAa$j0z-W")
+    SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD", "hgIJzVs@W4!8")
 
 
     def _make_servicenow_request(self, endpoint: str, params: Dict[str, str] = None, method: str = "GET", data: Dict[str, Any] = None) -> Dict[str, Any]:
