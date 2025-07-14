@@ -196,7 +196,7 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
    {
      "servicenow-server": {
        "command":"npx",
-    	"args":["mcp-remote@latest","http://localhost:8001/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://localhost:8003/mcp", "--allow-http"]
      }
    }
    ```
@@ -243,9 +243,9 @@ For production use or when you want to share the MCP server with multiple users,
 
 2. **Configure firewall (if needed):**
    ```bash
-   # Allow traffic on port 8001 (ServiceNow server port)
+   # Allow traffic on port 8003 (ServiceNow server port)
    # Check the servers/server_config.json for the list of ports to be opened
-   sudo ufw allow 8001
+   sudo ufw allow 8003
    ```
 
 3. **Configure your client to use the remote server:**
@@ -254,7 +254,7 @@ For production use or when you want to share the MCP server with multiple users,
    {
      "servicenow-server": {
        "command":"npx",
-    	"args":["mcp-remote@latest","http://remote-ip:8001/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://remote-ip:8003/mcp", "--allow-http"]
      }
    }
    ```
@@ -293,7 +293,7 @@ Using npx command and remote server
   "mcpServers": {
     "servicenow-server": {
       "command":"npx",
-    	"args":["mcp-remote@latest","http://<<remote-ip>>:8001/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://<<remote-ip>>:8003/mcp", "--allow-http"]
     }
   }
 }

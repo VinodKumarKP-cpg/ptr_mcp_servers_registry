@@ -71,7 +71,7 @@ class BaseMCPServer(ABC):
 
     def base_directory(self, file_name):
         """Get the base directory of the MCP server."""
-        return (os.path.dirname(os.path.abspath(file_name)).split("/"))[-1]
+        return os.path.basename(os.path.dirname(os.path.abspath(file_name)))
 
     def _register_methods(self, object):
         for method_name, method in getmembers(object):
