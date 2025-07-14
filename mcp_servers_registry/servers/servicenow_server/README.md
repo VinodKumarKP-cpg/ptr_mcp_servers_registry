@@ -1,26 +1,100 @@
-# Git Server MCP Server
+# ServiceNow Server MCP Server
 
-A comprehensive Model Context Protocol (MCP) server that provides advanced Git repository analysis and management capabilities. This server enables AI assistants to clone, analyze, and extract detailed information from Git repositories.
+A comprehensive Model Context Protocol (MCP) server that provides ServiceNow incident management capabilities. This server enables AI assistants to interact with ServiceNow instances to manage incidents, add comments, and perform various ServiceNow operations.
 
 ## Features
 
-### Repository Management
-- **Clone repositories** from any Git URL with branch selection
-- **Clean up** temporary repositories after analysis
-- **Get file listings** with intelligent filtering (excludes binary and hidden files)
+### Incident Management
+- **Fetch incidents** with customizable query filters
+- **Create new incidents** with description and details
+- **Update existing incidents** with flexible field modifications
+- **Resolve incidents** with resolution notes and close codes
 
-### Repository Analysis
-- **Comprehensive statistics** including commit counts, contributors, branches, and more
-- **Programming language detection** with detailed breakdown and statistics
-- **Repository structure visualization** with configurable depth traversal
-- **Contributor analysis** with detailed statistics and contributions
+### Incident Operations
+- **Add comments and work notes** to incidents (internal or customer-visible)
+- **Get specific incidents** by sys_id for detailed information
+- **Health monitoring** to check ServiceNow API connectivity
 
-### Commit Analysis
-- **Commit history** with detailed information and date filtering
-- **Commit search** by message content with configurable limits
-- **Contributor statistics** with detailed breakdowns
+### Integration Capabilities
+- **Secure authentication** using environment variables
+- **Comprehensive error handling** with detailed error messages
+- **Flexible API operations** supporting GET, POST, PUT, and PATCH methods
 
 ## Installation
+
+### Prerequisites
+- ServiceNow instance access
+- Valid ServiceNow credentials (username/password)
+- Python 3.11+
+
+### Environment Configuration
+Set up your ServiceNow credentials as environment variables:
+```bash
+export SERVICENOW_USER="your_username"
+export SERVICENOW_PASSWORD="your_password"
+```
+
+Or create a `.env` file:
+```
+SERVICENOW_USER=your_username
+SERVICENOW_PASSWORD=your_password
+```
+
+### Option 1: Direct UV Run (Recommended)
+Use uv to run the server directly without local installation:
+
+```json
+{
+  "servicenow-server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--with",
+      "git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git",
+      "servicenow-mcp-server"
+    ]
+  }
+}
+```
+
+### Option 2: Pip Install + Run
+Install the package first, then run the server:
+
+```bash
+pip install git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
+```
+
+Then configure your MCP client:
+```json
+{
+  "servicenow-server": {
+    "command": "servicenow-mcp-server",
+    "args": []
+  }
+}
+```
+
+### Option 3: Local Clone + UV Run
+Clone the repository locally and run with uv:
+
+```bash
+git clone https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
+```
+
+Then configure your MCP client:
+```json
+{
+  "servicenow-server": {
+    "command": "uv",
+    "args": [
+      "run",
+      "--directory",
+      "/path/to/ptr_mcp_servers_registry",
+      "servicenow-mcp-server"
+    ]
+  }
+}
+```
 
 ### Option 1: Direct UV Run (Recommended)
 Use uv to run the server directly without local installation:
@@ -95,28 +169,34 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
    cd ptr_mcp_servers_registry
    ```
 
-2. **Build and start all services:**
+2. **Set up environment variables:**
+   ```bash
+   export SERVICENOW_USER="your_username"
+   export SERVICENOW_PASSWORD="your_password"
+   ```
+
+3. **Build and start all services:**
    ```bash
    make start-all
    ```
 
-3. **Or start a specific service:**
+4. **Or start the ServiceNow service specifically:**
    ```bash
-   make start-git_server
+   make start-servicenow_server
    ```
 
-4. **List available services:**
+5. **List available services:**
    ```bash
    make list-services
    ```
 
-5. **Configure your client to use the local server:**
+6. **Configure your client to use the local server:**
    In your client configuration (e.g., Claude Desktop), add the server with the local URL:
    ```json
    {
-     "git-server": {
+     "servicenow-server": {
        "command":"npx",
-    	"args":["mcp-remote@latest","http://localhost:8000/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://localhost:8001/mcp", "--allow-http"]
      }
    }
    ```
@@ -125,9 +205,9 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
 
 - `make start-all` - Start all services using Docker Compose
 - `make stop-all` - Stop all services
-- `make start-<service>` - Start a specific service
-- `make stop-<service>` - Stop a specific service
-- `make restart-<service>` - Restart a specific service
+- `make start-servicenow_server` - Start the ServiceNow service
+- `make stop-servicenow_server` - Stop the ServiceNow service
+- `make restart-servicenow_server` - Restart the ServiceNow service
 - `make list-services` - List all available services
 - `make docker-build` - Build the Docker image
 - `make generate-compose` - Generate Docker Compose file
@@ -140,6 +220,7 @@ For production use or when you want to share the MCP server with multiple users,
 - Remote server with Docker and Docker Compose installed
 - SSH access to the remote server
 - Domain name or public IP address
+- ServiceNow instance credentials
 
 #### Deployment Steps
 
@@ -152,24 +233,28 @@ For production use or when you want to share the MCP server with multiple users,
    git clone https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
    cd ptr_mcp_servers_registry
    
+   # Set up environment variables
+   export SERVICENOW_USER="your_username"
+   export SERVICENOW_PASSWORD="your_password"
+   
    # Build and start services
    make start-all
    ```
 
 2. **Configure firewall (if needed):**
    ```bash
-   # Allow traffic on port 8000
+   # Allow traffic on port 8001 (ServiceNow server port)
    # Check the servers/server_config.json for the list of ports to be opened
-   sudo ufw allow 8000
+   sudo ufw allow 8001
    ```
 
 3. **Configure your client to use the remote server:**
    In your client configuration, use the remote server URL:
    ```json
    {
-     "git-server": {
+     "servicenow-server": {
        "command":"npx",
-    	"args":["mcp-remote@latest","http://remote-ip:8000/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://remote-ip:8001/mcp", "--allow-http"]
      }
    }
    ```
@@ -184,14 +269,18 @@ Using uv command
 ```json
 {
   "mcpServers": {
-    "git-server": {
+    "servicenow-server": {
       "command": "uv",
       "args": [
         "run",
         "--with",
         "git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git",
-        "git-mcp-server"
-      ]
+        "servicenow-mcp-server"
+      ],
+      "env": {
+        "SERVICENOW_USER": "your_username",
+        "SERVICENOW_PASSWORD": "your_password"
+      }
     }
   }
 }
@@ -202,9 +291,9 @@ Using npx command and remote server
 ```json
 {
   "mcpServers": {
-    "git-server": {
+    "servicenow-server": {
       "command":"npx",
-    	"args":["mcp-remote@latest","http://<<remote-ip>>:8000/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://<<remote-ip>>:8001/mcp", "--allow-http"]
     }
   }
 }
@@ -213,124 +302,193 @@ Using npx command and remote server
 ### Other MCP Clients
 The server follows the standard MCP protocol and can be integrated with any MCP-compatible client using the installation methods above.
 
+### ServiceNow Configuration
+- **Base URL**: Update `SERVICENOW_BASE_URL` in the code to match your ServiceNow instance
+- **Authentication**: Uses basic authentication with username/password
+- **API Access**: Ensure your ServiceNow user has appropriate permissions for incident management
+
 ## Available Tools
 
-### Repository Management
+### Incident Management
 
-#### `clone_repository`
-Clone a Git repository to analyze it.
+#### `get_servicenow_incidents`
+Fetch incidents from ServiceNow with customizable query filters.
 - **Parameters:**
-  - `git_url` (string): Git repository URL
-  - `branch` (string, optional): Branch to checkout (default: "main")
-- **Returns:** Path to the cloned repository
+  - `query` (string, optional): ServiceNow query string (default: "active=true")
+- **Returns:** Dictionary containing list of incidents matching the query
+- **Example queries:**
+  - `"active=true"` - Get all active incidents
+  - `"priority=1"` - Get high priority incidents
+  - `"assigned_to=user_sys_id"` - Get incidents assigned to specific user
 
-#### `cleanup_repository`
-Remove a cloned repository to free up disk space.
+#### `create_servicenow_incident`
+Create a new incident in ServiceNow.
 - **Parameters:**
-  - `repo_path` (string): Path to the repository to clean up
-- **Returns:** Boolean indicating success
+  - `short_description` (string): Short description for the incident
+  - `description` (string, optional): Detailed description
+- **Returns:** Dictionary containing the created incident details
 
-### Repository Analysis
-
-#### `get_file_list`
-Get a list of all files in the repository, excluding binary and hidden files.
+#### `update_servicenow_incident`
+Update an existing incident with flexible field modifications.
 - **Parameters:**
-  - `repo_path` (string): Path to repository
-- **Returns:** List of file paths relative to repository root
+  - `incident_id` (string): The sys_id of the incident to update
+  - `update_data` (dict): Dictionary containing fields to update
+- **Returns:** Dictionary containing the updated incident
+- **Common update fields:**
+  - `state`: Incident state (1=New, 2=In Progress, 3=On Hold, 6=Resolved, 7=Closed)
+  - `priority`: Priority level (1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning)
+  - `assigned_to`: User sys_id for assignment
+  - `work_notes`: Internal work notes
 
-#### `get_git_stats`
-Get comprehensive statistics about the repository.
+#### `get_servicenow_incident_by_id`
+Get detailed information for a specific incident.
 - **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-- **Returns:** Dictionary with repository statistics including commits, contributors, branches, etc.
+  - `incident_id` (string): The sys_id of the incident to retrieve
+- **Returns:** Dictionary containing detailed incident information
 
-#### `identify_programming_languages`
-Analyze the repository to identify programming languages used.
+### Incident Operations
+
+#### `servicenow_incident_add_comment`
+Add comments or work notes to existing incidents.
 - **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-- **Returns:** Dictionary with language statistics and breakdown
+  - `incident_id` (string): The sys_id of the incident
+  - `comment` (string): The comment text to add
+  - `comment_type` (string, optional): Type of comment - "work_notes" (internal) or "comments" (customer visible)
+- **Returns:** Dictionary containing the updated incident
 
-#### `get_repository_structure`
-Get the directory structure of the repository.
+#### `servicenow_resolve_incident`
+Resolve incidents with resolution details and close codes.
 - **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-  - `max_depth` (integer, optional): Maximum depth to traverse (default: 3)
-- **Returns:** Dictionary with repository structure information
+  - `incident_id` (string): The sys_id of the incident to resolve
+  - `resolution_notes` (string): Notes describing how the incident was resolved
+  - `close_code` (string, optional): Close code (default: "Solved (Permanently)")
+- **Returns:** Dictionary containing the resolved incident
+- **Common close codes:**
+  - "Solved (Permanently)"
+  - "Solved (Workaround)"
+  - "Not Solved (Not Reproducible)"
+  - "Closed/Resolved by Caller"
 
-### Commit Analysis
+### System Operations
 
-#### `get_commit_history`
-Retrieve detailed commit history with optional date filtering.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-  - `limit` (integer, optional): Maximum number of commits to return (default: 20)
-  - `since_days` (integer, optional): Only return commits from the last N days
-- **Returns:** List of commit information dictionaries
-
-#### `search_commits`
-Search commits by message content.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-  - `search_term` (string): Term to search for in commit messages
-  - `limit` (integer, optional): Maximum number of results to return (default: 10)
-- **Returns:** List of matching commits
-
-#### `get_contributor_stats`
-Get detailed contributor statistics.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-- **Returns:** Dictionary with contributor statistics
+#### `check_servicenow_health`
+Check ServiceNow API connectivity and health status.
+- **Parameters:** None
+- **Returns:** Dictionary containing health status and connection details
 
 
 ## Usage Examples
 
-### Basic Repository Analysis
+### Basic Incident Management
 ```python
-# Clone a repository
-repo_path = await clone_repository("https://github.com/user/repo.git", "main")
+# Get all active incidents
+incidents = await get_servicenow_incidents("active=true")
 
-# Get basic statistics
-stats = await get_git_stats(repo_path)
+# Create a new incident
+new_incident = await create_servicenow_incident(
+    "Email server down", 
+    "Users unable to access email since 9 AM"
+)
 
-# Identify programming languages
-languages = await identify_programming_languages(repo_path)
+# Get specific incident details
+incident_details = await get_servicenow_incident_by_id("abc123def456")
 
-# Get repository structure
-structure = await get_repository_structure(repo_path, max_depth=3)
-
-# Clean up when done
-await cleanup_repository(repo_path)
+# Update incident priority
+updated_incident = await update_servicenow_incident(
+    "abc123def456", 
+    {"priority": "1", "state": "2"}
+)
 ```
 
-### Commit Analysis
+### Adding Comments and Resolving
 ```python
-# Get recent commit history
-commits = await get_commit_history(repo_path, limit=50, since_days=30)
+# Add internal work note
+await servicenow_incident_add_comment(
+    "abc123def456",
+    "Investigated the issue, found root cause in email configuration",
+    "work_notes"
+)
 
-# Search for specific commits
-bug_fixes = await search_commits(repo_path, "bug fix", limit=10)
+# Add customer-visible comment
+await servicenow_incident_add_comment(
+    "abc123def456",
+    "We are working on resolving your email access issue",
+    "comments"
+)
 
-# Get contributor statistics
-contributors = await get_contributor_stats(repo_path)
+# Resolve the incident
+resolved_incident = await servicenow_resolve_incident(
+    "abc123def456",
+    "Issue resolved by restarting email service and updating configuration",
+    "Solved (Permanently)"
+)
+```
+
+### Advanced Queries
+```python
+# Get high priority incidents assigned to specific user
+high_priority = await get_servicenow_incidents(
+    "priority=1^assigned_to=user_sys_id"
+)
+
+# Get incidents updated in last 24 hours
+recent_updates = await get_servicenow_incidents(
+    "sys_updated_on>javascript:gs.daysAgoStart(1)"
+)
+
+# Check system health
+health_status = await check_servicenow_health()
 ```
 
 ## Error Handling
 
-The server includes comprehensive error handling for common Git operations:
-- Invalid repository URLs
-- Network connectivity issues
-- Permission errors
-- Missing branches or commits
-- Repository cleanup failures
+The server includes comprehensive error handling for common ServiceNow operations:
+- Invalid incident IDs or sys_ids
+- Network connectivity issues to ServiceNow instance
+- Authentication failures
+- Permission errors for specific operations
+- Invalid field values or data formats
+- ServiceNow API rate limiting
 
 All errors are logged and returned with descriptive messages to help with debugging.
+
+## ServiceNow Field Reference
+
+### Common Incident States
+- `1` - New
+- `2` - In Progress
+- `3` - On Hold
+- `6` - Resolved
+- `7` - Closed
+
+### Priority Levels
+- `1` - Critical
+- `2` - High  
+- `3` - Moderate
+- `4` - Low
+- `5` - Planning
+
+### Important Fields
+- `sys_id` - Unique identifier for the incident
+- `number` - Human-readable incident number
+- `short_description` - Brief description of the incident
+- `description` - Detailed description
+- `state` - Current state of the incident
+- `priority` - Priority level
+- `assigned_to` - User assigned to the incident
+- `caller_id` - User who reported the incident
+- `work_notes` - Internal notes (not visible to caller)
+- `comments` - Customer-visible comments
+- `close_notes` - Resolution details
+- `close_code` - Reason for closure
 
 ## Requirements
 
 - Python 3.11+
-- Git installed and accessible in PATH
-- Network access for cloning repositories
-- Sufficient disk space for temporary repository storage
+- ServiceNow instance access
+- Valid ServiceNow user credentials with incident management permissions
+- Network access to ServiceNow instance
+- `requests` library for HTTP operations
 
 ## License
 
@@ -339,4 +497,12 @@ This MCP server is part of the Capgemini Innersource MCP Servers Registry. Pleas
 ## Contributing
 
 This server is maintained as part of the larger MCP servers registry. For issues, feature requests, or contributions, please visit the [main repository](https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry).
+
+## Security Considerations
+
+- Store ServiceNow credentials securely using environment variables
+- Use HTTPS for all ServiceNow API communications
+- Implement proper access controls in ServiceNow for the API user
+- Regularly rotate ServiceNow passwords
+- Monitor API usage and access logs
 
