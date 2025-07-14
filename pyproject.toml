@@ -40,7 +40,7 @@ Issues = "https://github.com/yourusername/weather-mcp-server/issues"
 git-mcp-server = "mcp_servers_registry.servers.git_server.server:main"
 code-remediation-mcp-server = "mcp_servers_registry.servers.code_remediation_server.server:main"
 aws-utils-mcp-server = "mcp_servers_registry.servers.aws_utils_server.server:main"
-service-now-mcp-server = "mcp_servers_registry.servers.servicenow_server.server:main"
+servicenow-mcp-server = "mcp_servers_registry.servers.servicenow_server.server:main"
 
 
 [tool.setuptools.packages.find]
