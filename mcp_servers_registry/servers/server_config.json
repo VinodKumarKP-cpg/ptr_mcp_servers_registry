@@ -16,5 +16,8 @@
   },
   "jira_server": {
     "port": 8004
+  },
+   "env_lookup_server": {
+    "port": 8005
   }
 }
