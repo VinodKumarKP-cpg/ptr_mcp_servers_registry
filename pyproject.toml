@@ -7,40 +7,31 @@ build-backend = "setuptools.build_meta"
 name = "mcp-server-registry"
 version = "1.0.0"
 description = "MCP Server registry"
-authors = [{name = "Vinod Kumar KP", email = "vinodkumar.kp.1985@gmail.com"}]
+authors = [{name = "Vinod Kumar KP", email = "vinod.kunnum-purath@capgemini.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["mcp", "mcp-server-registry"]
+dynamic = ["scripts"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 
 dependencies = [
     "mcp>=1.0.0",
-    "fastmcp",
+    "fastmcp>=2.9.0",
     "nest-asyncio",
 ]
 
 
 [project.urls]
-Homepage = "https://github.com/yourusername/weather-mcp-server"
-Repository = "https://github.com/yourusername/weather-mcp-server"
-Issues = "https://github.com/yourusername/weather-mcp-server/issues"
-
-[project.scripts]
-git-mcp-server = "mcp_servers_registry.servers.git_server.server:main"
-code-remediation-mcp-server = "mcp_servers_registry.servers.code_remediation_server.server:main"
-aws-utils-mcp-server = "mcp_servers_registry.servers.aws_utils_server.server:main"
-service-now-mcp-server = "mcp_servers_registry.servers.servicenow_server.server:main"
+Homepage = "https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry"
+Repository = "https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.gi"
+Issues = "https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry/issues"
 
 
 [tool.setuptools.packages.find]
