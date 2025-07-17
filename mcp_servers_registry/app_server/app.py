@@ -5,20 +5,16 @@ A professional Streamlit application for monitoring and managing MCP servers.
 Provides real-time status monitoring, health checks, and configuration management.
 """
 
+import asyncio
 import json
 import os
 import socket
-import subprocess
-import asyncio
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, List
-from mcp import StdioServerParameters,ClientSession
-from mcp.client.stdio import stdio_client
-from mcp.shared.metadata_utils import get_display_name
-from langchain_mcp_adapters.client import MultiServerMCPClient
 
 import requests
 import streamlit as st
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
