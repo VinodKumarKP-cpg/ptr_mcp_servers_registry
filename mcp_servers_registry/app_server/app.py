@@ -9,11 +9,18 @@ import json
 import os
 import socket
 import subprocess
-from datetime import datetime
-from typing import Any, Dict, Optional
+import asyncio
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional, List
+from mcp import StdioServerParameters,ClientSession
+from mcp.client.stdio import stdio_client
+from mcp.shared.metadata_utils import get_display_name
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 import requests
 import streamlit as st
+
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class NetworkUtils:
@@ -78,6 +85,44 @@ class ServerHealthChecker:
                 "status_code": None,
                 "timestamp": datetime.now().isoformat()
             }
+
+
+class MCPToolsManager:
+    """Handles MCP tools retrieval and management."""
+
+    @staticmethod
+    async def get_mcp_tools_list(server_name,
+                                 server_port,
+                                 environment=None) -> List[Dict[str, str]]:
+        """Get the list of available MCP tools for a server."""
+        tools = []
+        try:
+            client = MultiServerMCPClient({
+                server_name : {
+                "url": f"http://localhost:{server_port}/mcp",
+                "transport": "streamable_http",
+                "timeout": timedelta(seconds=2),
+                "sse_read_timeout": timedelta(seconds=2)
+            }
+            })
+            tools = await client.get_tools()
+        except:
+            try:
+                client = MultiServerMCPClient({
+                    "server_name": {
+                        "command": "uv",
+                        "args": [
+                            "run", os.path.join(root, "servers", server_name, "server.py")
+                        ],
+                        "transport": "stdio",
+                        "env": environment if environment else {}
+                    }
+                })
+                tools = await client.get_tools()
+            except:
+                pass
+
+        return tools
 
 
 class ConfigurationManager:
@@ -160,6 +205,7 @@ class DashboardUI:
         self.config_manager = ConfigurationManager()
         self.health_checker = ServerHealthChecker()
         self.network_utils = NetworkUtils()
+        self.tools_manager = MCPToolsManager()
         self._setup_page_config()
         self._load_custom_css()
 
@@ -193,12 +239,12 @@ class DashboardUI:
     def render_sidebar(self, server_config: Dict[str, Any]):
         """Render the sidebar with controls and statistics."""
         with st.sidebar:
-            self._render_dashboard_controls()
+            auto_refresh = self._render_dashboard_controls()
             self._render_server_statistics(server_config)
+            return auto_refresh
 
     def _render_dashboard_controls(self):
         """Render dashboard control section."""
-        # st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
         st.header("📊 Dashboard Controls")
 
         auto_refresh = st.checkbox("Auto-refresh (30s)", value=False)
@@ -208,12 +254,10 @@ class DashboardUI:
         if st.button("🔄 Refresh Now", use_container_width=True):
             st.rerun()
 
-        # st.markdown('</div>', unsafe_allow_html=True)
         return auto_refresh
 
     def _render_server_statistics(self, server_config: Dict[str, Any]):
         """Render server statistics section."""
-        # st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
         st.header("📈 Server Statistics")
 
         stats = self._get_server_stats(server_config)
@@ -232,8 +276,6 @@ class DashboardUI:
 
         st.markdown(f"<div>Public IP: {public_ip or 'Unknown'}</div>", unsafe_allow_html=True)
         st.markdown(f"<div>Local IP: {local_ip}</div>", unsafe_allow_html=True)
-
-        # st.markdown('</div>', unsafe_allow_html=True)
 
     def _get_server_stats(self, server_config: Dict[str, Any]) -> Dict[str, int]:
         """Calculate server statistics."""
@@ -271,9 +313,22 @@ class DashboardUI:
             display_name = server_name.replace('_', ' ').title()
 
             with st.expander(f"🖥️ {display_name}", expanded=False):
-                self._render_server_card(server_name, server_info, is_online)
+                # Use asyncio to run the async method
+                asyncio.run(self._render_server_card(server_name, server_info, is_online))
 
-    def _render_server_card(self, server_name: str, server_info: Dict[str, Any], is_online: bool):
+    def _render_tools_popover(self, tools: List[Dict[str, str]]):
+        """Render the tools popover content."""
+        if not tools:
+            st.info("No tools available or unable to fetch tools.")
+            return
+
+        for tool in tools:
+            tool_description = tool.description.replace("\n", "<br/>")
+            st.markdown(f"**Tool:** {tool.name}", unsafe_allow_html=True)
+            st.markdown(f"**Description:** {tool_description}", unsafe_allow_html=True)
+            st.divider()
+
+    async def _render_server_card(self, server_name: str, server_info: Dict[str, Any], is_online: bool):
         """Render an individual server card."""
         port = server_info.get('port', 0)
 
@@ -296,6 +351,8 @@ class DashboardUI:
             if health['response_time']:
                 st.write(f"**Response Time:** {health['response_time']:.3f}s")
 
+            await self._render_documentation_section(server_name, port, env_vars)
+
         with col2:
             # Status badge
             status_class = "status-online" if is_online else "status-offline"
@@ -315,16 +372,26 @@ class DashboardUI:
                 else:
                     st.error("❌ Connection failed!")
 
-        # README content
-        self._render_readme_section(server_name)
+            # Tools popover
 
-    def _render_readme_section(self, server_name: str):
+    async def _render_documentation_section(self,
+                                            server_name: str,
+                                            port,
+                                            env_vars):
         """Render the README section for a server."""
         readme_content = self.config_manager.load_readme(server_name)
         if readme_content:
             st.subheader("📖 Documentation")
-            with st.popover("View Documentation"):
-                st.markdown(readme_content)
+            # README content
+            col3, col4 = st.columns([1, 1])
+            with col3:
+                with st.popover("View Documentation"):
+                    st.markdown(readme_content)
+            with col4:
+                with st.popover("🛠️ View Available Tools", use_container_width=False):
+                    with st.spinner("Loading tools..."):
+                        tools = await self.tools_manager.get_mcp_tools_list(server_name, port, env_vars)
+                        self._render_tools_popover(tools)
         else:
             st.info("No README.md found for this server.")
 

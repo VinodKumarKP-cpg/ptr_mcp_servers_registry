@@ -78,6 +78,84 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+  servicenow_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    container_name: mcp-servicenow-server
+    ports:
+    - 8003:8003
+    volumes:
+    - ./logs:/tmp
+    environment:
+    - MCP_SERVER_NAME=servicenow_server
+    command: --transport streamable-http
+    restart: unless-stopped
+    networks:
+    - mcp-network
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8003/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  jira_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    container_name: mcp-jira-server
+    ports:
+    - 8004:8004
+    volumes:
+    - ./logs:/tmp
+    environment:
+    - MCP_SERVER_NAME=jira_server
+    command: --transport streamable-http
+    restart: unless-stopped
+    networks:
+    - mcp-network
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8004/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  env_lookup_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    container_name: mcp-env-lookup-server
+    ports:
+    - 8005:8005
+    volumes:
+    - ./logs:/tmp
+    environment:
+    - MCP_SERVER_NAME=env_lookup_server
+    command: --transport streamable-http
+    restart: unless-stopped
+    networks:
+    - mcp-network
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8005/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
 networks:
   mcp-network:
     driver: bridge
