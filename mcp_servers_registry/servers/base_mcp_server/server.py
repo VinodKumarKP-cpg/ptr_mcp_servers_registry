@@ -2,9 +2,10 @@ import argparse
 import json
 import os
 import sys
-from abc import ABC, abstractmethod
+from abc import ABC
 from inspect import ismethod, isfunction, getmembers
 from typing import Literal, List
+
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
@@ -24,6 +25,9 @@ nest_asyncio.apply()  # Added call
 
 from fastmcp import FastMCP
 from mcp_servers_registry.utils.logger_utils import get_logger
+from fastmcp.server.middleware.middleware import Middleware, MiddlewareContext
+from fastmcp.server.dependencies import get_http_headers
+
 from pydantic import BaseModel
 
 VALID_TRANSPORTS = {"stdio", "streamable-http", "sse"}
@@ -31,6 +35,15 @@ VALID_TRANSPORTS = {"stdio", "streamable-http", "sse"}
 
 class MCPServerConfig(BaseModel):
     port: int
+
+
+class HeaderCaptureMiddleware(Middleware):
+    async def __call__(self, context: MiddlewareContext, call_next):
+        headers = get_http_headers()
+        for key, value in headers.items():
+            os.environ[key] = value
+        result = await call_next(context)
+        return result
 
 
 class BaseMCPServer(ABC):
@@ -54,7 +67,6 @@ class BaseMCPServer(ABC):
         self.object_list = object_list
         self._register_tools()
 
-
     def get_server_config(self):
         """
         Get the server configuration from server_config.json using the server name
@@ -76,7 +88,7 @@ class BaseMCPServer(ABC):
     def _register_methods(self, object):
         for method_name, method in getmembers(object):
 
-            if ismethod(method) or  isfunction(method):
+            if ismethod(method) or isfunction(method):
                 # Skip private methods
                 if method_name.startswith('_'):
                     continue
@@ -104,6 +116,7 @@ class BaseMCPServer(ABC):
         if transport not in VALID_TRANSPORTS:
             raise ValueError(f"Invalid transport: {transport}. Must be one of {VALID_TRANSPORTS}")
         self.mcp.port = self.server_config.port
+        self.mcp.add_middleware(HeaderCaptureMiddleware())
         self.mcp.run(transport=transport)
 
     def main(self):
