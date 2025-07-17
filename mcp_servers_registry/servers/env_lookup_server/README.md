@@ -1,24 +1,26 @@
-# Environment Lookup Server MCP Server
+# Environment Variables MCP Server
 
-A comprehensive Model Context Protocol (MCP) server that provides advanced Git repository analysis and management capabilities. This server enables AI assistants to clone, analyze, and extract detailed information from Git repositories.
+A comprehensive Model Context Protocol (MCP) server that provides secure access to environment variables and system information. This server enables AI assistants to safely retrieve and analyze environment variables with built-in security features to protect sensitive information.
 
 ## Features
 
-### Repository Management
-- **Clone repositories** from any Git URL with branch selection
-- **Clean up** temporary repositories after analysis
-- **Get file listings** with intelligent filtering (excludes binary and hidden files)
+### Environment Variable Access
+- **Secure variable retrieval** with automatic sensitive data filtering
+- **Pattern-based filtering** for targeted variable searches
+- **Configurable sensitivity controls** to show or hide potentially sensitive variables
+- **Comprehensive metadata** including counts and system information
 
-### Repository Analysis
-- **Comprehensive statistics** including commit counts, contributors, branches, and more
-- **Programming language detection** with detailed breakdown and statistics
-- **Repository structure visualization** with configurable depth traversal
-- **Contributor analysis** with detailed statistics and contributions
+### System Information
+- **Platform detection** and system details
+- **Path separator identification** for cross-platform compatibility
+- **Current working directory** information
+- **PATH variable parsing** with detailed breakdown
 
-### Commit Analysis
-- **Commit history** with detailed information and date filtering
-- **Commit search** by message content with configurable limits
-- **Contributor statistics** with detailed breakdowns
+### Security Features
+- **Automatic sensitive variable detection** using common patterns
+- **Safe-by-default approach** hiding sensitive variables unless explicitly requested
+- **Detailed logging** of hidden variables for transparency
+- **Pattern-based filtering** to avoid accidental exposure
 
 ## Installation
 
@@ -27,13 +29,13 @@ Use uv to run the server directly without local installation:
 
 ```json
 {
-  "git-server": {
+  "env-server": {
     "command": "uv",
     "args": [
       "run",
       "--with",
       "git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git",
-      "git-mcp-server"
+      "env-lookup-mcp-server"
     ]
   }
 }
@@ -49,8 +51,8 @@ pip install git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registr
 Then configure your MCP client:
 ```json
 {
-  "git-server": {
-    "command": "git-mcp-server",
+  "env-server": {
+    "command": "env-lookup-mcp-server",
     "args": []
   }
 }
@@ -66,13 +68,13 @@ git clone https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git
 Then configure your MCP client:
 ```json
 {
-  "git-server": {
+  "env-server": {
     "command": "uv",
     "args": [
       "run",
       "--directory",
       "/path/to/ptr_mcp_servers_registry",
-      "git-mcp-server"
+      "env-lookup-mcp-server"
     ]
   }
 }
@@ -102,7 +104,7 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
 
 3. **Or start a specific service:**
    ```bash
-   make start-git_server
+   make start-env_server
    ```
 
 4. **List available services:**
@@ -114,9 +116,9 @@ You can run the MCP server registry locally using Docker Compose. This is ideal 
    In your client configuration (e.g., Claude Desktop), add the server with the local URL:
    ```json
    {
-     "git-server": {
+     "env-server": {
        "command":"npx",
-    	"args":["mcp-remote@latest","http://localhost:8000/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://localhost:8005/mcp", "--allow-http"]
      }
    }
    ```
@@ -158,18 +160,18 @@ For production use or when you want to share the MCP server with multiple users,
 
 2. **Configure firewall (if needed):**
    ```bash
-   # Allow traffic on port 8000
+   # Allow traffic on port 8005
    # Check the servers/server_config.json for the list of ports to be opened
-   sudo ufw allow 8000
+   sudo ufw allow 8005
    ```
 
 3. **Configure your client to use the remote server:**
    In your client configuration, use the remote server URL:
    ```json
    {
-     "git-server": {
+     "env-server": {
        "command":"npx",
-    	"args":["mcp-remote@latest","http://remote-ip:8000/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://remote-ip:8005/mcp", "--allow-http"]
      }
    }
    ```
@@ -184,13 +186,13 @@ Using uv command
 ```json
 {
   "mcpServers": {
-    "git-server": {
+    "env-server": {
       "command": "uv",
       "args": [
         "run",
         "--with",
         "git+https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry.git",
-        "git-mcp-server"
+        "env-lookup-mcp-server"
       ]
     }
   }
@@ -202,9 +204,9 @@ Using npx command and remote server
 ```json
 {
   "mcpServers": {
-    "git-server": {
+    "env-server": {
       "command":"npx",
-    	"args":["mcp-remote@latest","http://<<remote-ip>>:8000/mcp", "--allow-http"]
+    	"args":["mcp-remote@latest","http://<<remote-ip>>:8005/mcp", "--allow-http"]
     }
   }
 }
@@ -215,122 +217,147 @@ The server follows the standard MCP protocol and can be integrated with any MCP-
 
 ## Available Tools
 
-### Repository Management
+### Environment Variable Management
 
-#### `clone_repository`
-Clone a Git repository to analyze it.
+#### `get_environment_variables`
+Retrieve environment variables with security filtering and pattern matching.
 - **Parameters:**
-  - `git_url` (string): Git repository URL
-  - `branch` (string, optional): Branch to checkout (default: "main")
-- **Returns:** Path to the cloned repository
+  - `pattern` (string, optional): Filter environment variable names by pattern (case-insensitive)
+  - `include_sensitive` (boolean, optional): Whether to include potentially sensitive variables (default: False)
+- **Returns:** Dictionary containing:
+  - `environment_variables`: Dictionary of environment variables
+  - `total_count`: Number of variables returned
+  - `sensitive_variables_hidden`: Count of hidden sensitive variables (if `include_sensitive=False`)
+  - `sensitive_variable_names`: List of hidden sensitive variable names
+  - `system_info`: Platform and system information
+  - `note`: Information about filtering behavior
 
-#### `cleanup_repository`
-Remove a cloned repository to free up disk space.
+#### `get_specific_env_var`
+Retrieve a specific environment variable by name.
 - **Parameters:**
-  - `repo_path` (string): Path to the repository to clean up
-- **Returns:** Boolean indicating success
+  - `variable_name` (string): Name of the environment variable to retrieve
+- **Returns:** Dictionary containing:
+  - `variable_name`: The requested variable name
+  - `exists`: Boolean indicating if the variable exists
+  - `value`: The variable value (or null if not found)
+  - `message`: Error message if variable not found
 
-### Repository Analysis
+#### `get_path_variables`
+Get PATH-related environment variables parsed into individual components.
+- **Parameters:** None
+- **Returns:** Dictionary containing:
+  - `path_variables`: Dictionary of PATH-like variables with:
+    - `raw_value`: Original environment variable value
+    - `paths`: List of individual paths
+    - `path_count`: Number of paths found
+  - `path_separator`: System path separator character
+  - `note`: Description of the parsing behavior
 
-#### `get_file_list`
-Get a list of all files in the repository, excluding binary and hidden files.
-- **Parameters:**
-  - `repo_path` (string): Path to repository
-- **Returns:** List of file paths relative to repository root
+## Security Features
 
-#### `get_git_stats`
-Get comprehensive statistics about the repository.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-- **Returns:** Dictionary with repository statistics including commits, contributors, branches, etc.
+### Sensitive Variable Detection
+The server automatically detects potentially sensitive environment variables using common patterns:
+- `password`, `secret`, `key`, `token`
+- `auth`, `credential`, `api_key`
+- `private`, `cert`, `ssl`, `tls`
+- `oauth`
 
-#### `identify_programming_languages`
-Analyze the repository to identify programming languages used.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-- **Returns:** Dictionary with language statistics and breakdown
+### Safe-by-Default Behavior
+- Sensitive variables are hidden by default
+- Only safe variables are returned unless explicitly requested
+- Detailed information about hidden variables is provided
+- Pattern matching works on both safe and sensitive variables
 
-#### `get_repository_structure`
-Get the directory structure of the repository.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-  - `max_depth` (integer, optional): Maximum depth to traverse (default: 3)
-- **Returns:** Dictionary with repository structure information
-
-### Commit Analysis
-
-#### `get_commit_history`
-Retrieve detailed commit history with optional date filtering.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-  - `limit` (integer, optional): Maximum number of commits to return (default: 20)
-  - `since_days` (integer, optional): Only return commits from the last N days
-- **Returns:** List of commit information dictionaries
-
-#### `search_commits`
-Search commits by message content.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-  - `search_term` (string): Term to search for in commit messages
-  - `limit` (integer, optional): Maximum number of results to return (default: 10)
-- **Returns:** List of matching commits
-
-#### `get_contributor_stats`
-Get detailed contributor statistics.
-- **Parameters:**
-  - `repo_path` (string): Path to the Git repository
-- **Returns:** Dictionary with contributor statistics
-
+### Transparency
+- Count of hidden sensitive variables is always provided
+- Names of hidden variables are listed (but not their values)
+- Clear notifications when sensitive variables are included or excluded
 
 ## Usage Examples
 
-### Basic Repository Analysis
+### Basic Environment Variable Access
 ```python
-# Clone a repository
-repo_path = await clone_repository("https://github.com/user/repo.git", "main")
+# Get all safe environment variables
+env_vars = await get_environment_variables()
 
-# Get basic statistics
-stats = await get_git_stats(repo_path)
+# Get variables matching a pattern
+python_vars = await get_environment_variables(pattern="python")
 
-# Identify programming languages
-languages = await identify_programming_languages(repo_path)
-
-# Get repository structure
-structure = await get_repository_structure(repo_path, max_depth=3)
-
-# Clean up when done
-await cleanup_repository(repo_path)
+# Get all variables including sensitive ones (use with caution)
+all_vars = await get_environment_variables(include_sensitive=True)
 ```
 
-### Commit Analysis
+### Specific Variable Retrieval
 ```python
-# Get recent commit history
-commits = await get_commit_history(repo_path, limit=50, since_days=30)
+# Get a specific environment variable
+home_dir = await get_specific_env_var("HOME")
+path_var = await get_specific_env_var("PATH")
 
-# Search for specific commits
-bug_fixes = await search_commits(repo_path, "bug fix", limit=10)
+# Check if a variable exists
+api_key = await get_specific_env_var("API_KEY")
+if api_key["exists"]:
+    print(f"API key is set: {api_key['value']}")
+```
 
-# Get contributor statistics
-contributors = await get_contributor_stats(repo_path)
+### PATH Variable Analysis
+```python
+# Get detailed PATH information
+path_info = await get_path_variables()
+
+# Access individual components
+for path in path_info["path_variables"]["PATH"]["paths"]:
+    print(f"PATH component: {path}")
+```
+
+### Filtered Environment Analysis
+```python
+# Find all Java-related environment variables
+java_vars = await get_environment_variables(pattern="java")
+
+# Find all development-related variables
+dev_vars = await get_environment_variables(pattern="dev")
+
+# Get system information
+system_info = await get_environment_variables()
+platform = system_info["system_info"]["platform"]
 ```
 
 ## Error Handling
 
-The server includes comprehensive error handling for common Git operations:
-- Invalid repository URLs
-- Network connectivity issues
-- Permission errors
-- Missing branches or commits
-- Repository cleanup failures
+The server includes comprehensive error handling for common scenarios:
+- Missing environment variables
+- Invalid pattern matching
+- System information retrieval errors
+- Permission issues accessing environment variables
 
 All errors are logged and returned with descriptive messages to help with debugging.
+
+## Common Use Cases
+
+### Development Environment Analysis
+- Check for required environment variables
+- Verify development tool configurations
+- Analyze PATH settings for missing tools
+- Identify configuration conflicts
+
+### System Configuration Review
+- Audit environment variable settings
+- Check for security-related variables
+- Verify system path configurations
+- Platform-specific environment analysis
+
+### Troubleshooting
+- Diagnose missing environment variables
+- Check for conflicting configurations
+- Verify tool installations via PATH
+- Platform compatibility checks
 
 ## Requirements
 
 - Python 3.11+
-- Git installed and accessible in PATH
-- Network access for cloning repositories
-- Sufficient disk space for temporary repository storage
+- Standard library only (no external dependencies)
+- Access to system environment variables
+- Appropriate permissions for environment variable access
 
 ## License
 
@@ -339,4 +366,3 @@ This MCP server is part of the Capgemini Innersource MCP Servers Registry. Pleas
 ## Contributing
 
 This server is maintained as part of the larger MCP servers registry. For issues, feature requests, or contributions, please visit the [main repository](https://github.com/Capgemini-Innersource/ptr_mcp_servers_registry).
-
