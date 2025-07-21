@@ -6,6 +6,7 @@ Provides real-time status monitoring, health checks, and configuration managemen
 """
 
 import asyncio
+import glob
 import json
 import os
 import socket
@@ -94,12 +95,12 @@ class MCPToolsManager:
         tools = []
         try:
             client = MultiServerMCPClient({
-                server_name : {
-                "url": f"http://localhost:{server_port}/mcp",
-                "transport": "streamable_http",
-                "timeout": timedelta(seconds=2),
-                "sse_read_timeout": timedelta(seconds=2)
-            }
+                server_name: {
+                    "url": f"http://localhost:{server_port}/mcp",
+                    "transport": "streamable_http",
+                    "timeout": timedelta(seconds=2),
+                    "sse_read_timeout": timedelta(seconds=2)
+                }
             })
             tools = await client.get_tools()
         except:
@@ -126,19 +127,25 @@ class ConfigurationManager:
 
     def __init__(self):
         self.file_root = os.path.dirname(os.path.abspath(__file__))
-        self.config_path = os.path.join(
+        self.config_directory = os.path.join(
             os.path.dirname(self.file_root),
-            "servers",
-            "server_config.json"
-        )
+            "servers_config")
 
     def load_server_config(self) -> Dict[str, Any]:
         """Load server configuration from JSON file."""
+        server_config = {}
+        for config_file in glob.glob(os.path.join(self.config_directory, "*.json")):
+            server_name = (os.path.basename(config_file).split('.'))[0]
+            server_config[server_name] = self.load_individual_json_config(config_file=config_file)
+        return server_config
+
+    def load_individual_json_config(self, config_file):
+        """Load server configuration from JSON file."""
         try:
-            with open(self.config_path, "r", encoding='utf-8') as file:
+            with open(config_file, "r", encoding='utf-8') as file:
                 return json.load(file)
         except FileNotFoundError:
-            st.error(f"Configuration file not found: {self.config_path}")
+            st.error(f"Configuration file not found: {config_file}")
             return {}
         except json.JSONDecodeError as e:
             st.error(f"Invalid JSON in configuration file: {str(e)}")
@@ -427,7 +434,7 @@ class DashboardUI:
         server_config = self.config_manager.load_server_config()
 
         if not server_config:
-            st.error("No server configuration found. Please check your server_config.json file.")
+            st.error("No server configuration found. Please check the directory servers_config for corresponding config file.")
             return
 
         # Render UI components

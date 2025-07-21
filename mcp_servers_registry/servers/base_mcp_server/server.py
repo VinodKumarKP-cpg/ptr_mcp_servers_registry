@@ -4,6 +4,7 @@ import os
 import sys
 from abc import ABC
 from inspect import ismethod, isfunction, getmembers
+from pathlib import Path
 from typing import Literal, List
 
 from starlette.requests import Request
@@ -69,17 +70,19 @@ class BaseMCPServer(ABC):
 
     def get_server_config(self):
         """
-        Get the server configuration from server_config.json using the server name
+        Get the server configuration from the directory servers_config using the server name
         :return:
         """
-        file_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        server_config_file = os.path.join(file_root, "server_config.json")
-        with open(server_config_file, "r") as f:
-            server_config = json.load(f)
+        file_root = Path(__file__).parent.parent.parent
+        server_config_file = os.path.join(file_root, "servers_config", f"{self.server_name}.json")
+        print(server_config_file)
 
-        if self.server_name not in server_config:
-            raise ValueError(f"Server name {self.server_name} not found in server_config.json")
-        return MCPServerConfig.model_validate(server_config[self.server_name])
+        if os.path.exists(server_config_file):
+            with open(server_config_file, "r") as f:
+                server_config = json.load(f)
+        else:
+            raise ValueError(f"Server name configuration {self.server_name}.json not found in servers_config directory")
+        return MCPServerConfig.model_validate(server_config)
 
     def base_directory(self, file_name):
         """Get the base directory of the MCP server."""

@@ -1,0 +1,5 @@
+{
+  "port": 8002,
+  "util_file_name": "aws_utils.py",
+  "util_class_name": "AWSUtils"
+}

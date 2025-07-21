@@ -1,0 +1,8 @@
+{
+  "port": 8001,
+  "environment": {
+    "RESULTS_BUCKET": "${RESULTS_BUCKET}"
+  },
+  "util_file_name": "code_remediation_utils.py",
+  "util_class_name": "CodeRemediationUtils"
+}

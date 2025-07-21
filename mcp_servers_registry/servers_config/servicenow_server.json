@@ -1,0 +1,5 @@
+{
+  "port": 8003,
+  "util_file_name": "servicenow_utils.py",
+  "util_class_name": "ServiceNowUtils"
+}

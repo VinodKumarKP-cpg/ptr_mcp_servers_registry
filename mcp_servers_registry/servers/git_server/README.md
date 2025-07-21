@@ -159,7 +159,7 @@ For production use or when you want to share the MCP server with multiple users,
 2. **Configure firewall (if needed):**
    ```bash
    # Allow traffic on port 8000
-   # Check the servers/server_config.json for the list of ports to be opened
+   # Check the servers_config/git_server.json for the list of ports to be opened
    sudo ufw allow 8000
    ```
 

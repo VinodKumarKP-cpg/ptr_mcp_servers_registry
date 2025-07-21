@@ -1,12 +1,23 @@
 #!/usr/bin/env python3.11
-
+import glob
 import json
-import yaml
+import os
 import sys
-from pathlib import Path
+from typing import Dict, Any
+
+import yaml
 
 
-def load_server_config(config_file: str) -> dict:
+def load_server_config(config_directory) -> Dict[str, Any]:
+    """Load server configuration from JSON file."""
+    server_config = {}
+    for config_file in glob.glob(os.path.join(config_directory, "*.json")):
+        server_name = (os.path.basename(config_file).split('.'))[0]
+        server_config[server_name] = load_individual_json_config(config_file=config_file)
+    return server_config
+
+
+def load_individual_json_config(config_file):
     """Load server configuration from JSON file."""
     try:
         with open(config_file, 'r') as f:
@@ -98,7 +109,7 @@ def write_docker_compose(compose_config: dict, output_file: str = 'docker-compos
 def main():
     """Main function to generate Docker Compose file."""
     # Default configuration file
-    config_file = 'mcp_servers_registry/servers/server_config.json'
+    config_directory = 'mcp_servers_registry/servers_config'
     output_file = 'docker-compose.yaml'
 
     # Parse command line arguments
@@ -107,10 +118,10 @@ def main():
     if len(sys.argv) > 2:
         output_file = sys.argv[2]
 
-    print(f"Loading configuration from: {config_file}")
+    print(f"Loading configuration from: {config_directory}")
 
     # Load server configuration
-    server_config = load_server_config(config_file)
+    server_config = load_server_config(config_directory)
 
     # Generate Docker Compose configuration
     compose_config = generate_docker_compose(server_config)

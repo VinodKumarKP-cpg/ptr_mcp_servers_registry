@@ -6,3 +6,7 @@ dist
 *.pyc
 logs
 uv.lock
+mcp_servers_registry/app_server/tmp/config
+mcp_servers_registry/app_server/tmp/utils_files
+mcp_servers_registry/app_server/tokens
+docker-compose.yaml
