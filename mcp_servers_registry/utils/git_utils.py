@@ -702,10 +702,11 @@ class GitUtils:
 
         # Check if branch exists on remote
         remote_branches = [ref.name.split('/')[-1] for ref in origin.refs]
-        if branch_name in remote_branches:
+        if branch_name.split('/')[-1] in remote_branches:
             # Checkout the remote branch
             logger.info(f"Checkout existing branch {branch_name}")
             repo.git.checkout(branch_name)
+            repo.git.pull("origin")
         else:
             # Create new branch from main
             logger.info(f"Creating new branch {branch_name}")

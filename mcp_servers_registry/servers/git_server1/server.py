@@ -15,7 +15,7 @@ import nest_asyncio  # Added import
 
 nest_asyncio.apply()  # Added call
 
-from mcp_servers_registry.utils.('git_utils.py',) import GitUtils
+from mcp_servers_registry.utils.git_utils import GitUtils
 from mcp_servers_registry.servers.base_mcp_server.server import BaseMCPServer
 
 
@@ -26,7 +26,7 @@ class GitToolsServer1(BaseMCPServer):
         """
         Initialize the Code Remediation server.
         """
-        super().__init__(self.base_directory(__file__), object_list=[util_class_name()])
+        super().__init__(self.base_directory(__file__), object_list=[GitUtils()])
 
 def main():
     """Main function to run the Code Remediation server."""
