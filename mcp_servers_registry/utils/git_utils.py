@@ -3,10 +3,11 @@ import os
 import re
 import shutil
 import tempfile
+import requests
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from urllib.parse import urlparse
 
 # import nest_asyncio  # Added import
@@ -580,3 +581,154 @@ class GitUtils:
         except Exception as e:
             logger.error(f"Error cleaning up repository: {str(e)}")
             return False
+
+    def _parse_git_url(self, git_url) -> Tuple[str, str]:
+        """
+        Parse git URL to extract owner and repository name.
+
+        Returns:
+            tuple: (owner, repo_name)
+
+        Raises:
+            GitHubError: If parsing fails
+        """
+        try:
+            # Handle SSH URLs (git@github.com:owner/repo.git)
+            if git_url.startswith('git@'):
+                parts = git_url.split(':')[1].split('/')
+                owner = parts[-2]
+                repo = parts[-1].replace('.git', '')
+                return owner, repo
+
+            # Handle HTTPS URLs (https://github.com/owner/repo.git)
+            parsed = urlparse(git_url)
+            path = parsed.path.strip('/')
+            parts = path.split('/')
+
+            if len(parts) >= 2:
+                owner = parts[-2]
+                repo = parts[-1].replace('.git', '')
+                return owner, repo
+
+            raise GitHubError(f"Could not parse owner and repo from git URL: {git_url}")
+        except Exception as e:
+            logger.error(f"Error parsing git URL: {str(e)}")
+            raise GitHubError(f"Failed to parse git URL: {str(e)}") from e
+
+    def create_pull_request(self,
+                            new_branch: str,
+                            git_url,
+                            pr_title,
+                            pr_body) -> Dict:
+        """
+        Create a pull request with remediated code.
+
+        Args:
+            new_branch: New branch with remediated code
+            all_results: Analysis results for all files
+            summary: Summary of findings
+
+        Returns:
+            dict: Pull request details or error
+        """
+        try:
+            # Create PR title and body
+            token = self._get_github_token()
+
+            # Create the pull request
+            headers = {
+                'Authorization': f'token {token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+
+            owner, repo = self._parse_git_url(git_url)
+
+            pr_url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
+            pr_data = {
+                'title': pr_title,
+                'body': pr_body,
+                'head': new_branch,
+                'base': 'main'
+            }
+
+            # Create the PR
+            response = requests.post(pr_url, headers=headers, json=pr_data)
+            response.raise_for_status()
+            pr_result = response.json()
+
+            return {
+                'pull_request_url': pr_result['html_url'],
+                'pull_request_number': pr_result['number']
+            }
+
+        except requests.RequestException as e:
+            logger.error(f"API error creating pull request: {str(e)}")
+            return {'error': f"API error: {str(e)}"}
+        except Exception as e:
+            logger.error(f"Error creating pull request: {str(e)}")
+            return {'error': str(e)}
+
+    def _get_github_token(self) -> str:
+        """
+        Retrieve GitHub token from environment variables.
+
+        Returns:
+            str: GitHub token
+
+        Raises:
+            GitHubError: If token retrieval fails
+        """
+        try:
+            token = os.environ.get('GITHUB_TOKEN')
+            if not token:
+                raise GitHubError("GitHub token not found in environment variables")
+            return token
+        except Exception as e:
+            logger.error(f"Error retrieving GitHub token: {str(e)}")
+            raise GitHubError(f"Failed to retrieve GitHub token: {str(e)}") from e
+
+    def create_branch(self, repo_path, branch_name):
+        """
+        Create new branch
+        :param repo_path: Repository path
+        :param branch_name: branch name
+        :return: branch name
+        """
+        repo = Repo(repo_path)
+        origin = repo.remotes.origin
+
+        # Fetch all branches
+        origin.fetch()
+
+        # Check if branch exists on remote
+        remote_branches = [ref.name.split('/')[-1] for ref in origin.refs]
+        if branch_name in remote_branches:
+            # Checkout the remote branch
+            logger.info(f"Checkout existing branch {branch_name}")
+            repo.git.checkout(branch_name)
+        else:
+            # Create new branch from main
+            logger.info(f"Creating new branch {branch_name}")
+            repo.git.checkout('main')
+            repo.git.checkout('-b', branch_name)
+
+        return branch_name
+
+
+    def commit_and_push(self, repo_path, commit_file_list, branch_name, commit_message):
+        """
+        Commit the files to the repo and push the new branch
+        :param repo_path: Repo path
+        :param commit_file_list: File list which need to be commited
+        :param branch_name: git branch name
+        :param commit_message: commit message
+        :return:
+        """
+        repo = Repo(repo_path)
+        repo.index.add(commit_file_list)
+        repo.index.commit(commit_message)
+
+        try:
+            repo.git.push('--set-upstream', 'origin', branch_name)
+        except GitHubError as e:
+            raise GitHubError(f"Push failed: {e}")

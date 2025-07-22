@@ -1,0 +1,11 @@
+{
+    "mcp_server_name": "git_server1",
+    "util_file_name": "git_utils.py",
+    "util_class_name": "GitUtils",
+    "uploader_files": [
+        "git_utils.py"
+    ],
+    "additional_package": "",
+    "port": "8200",
+    "environment": {}
+}
