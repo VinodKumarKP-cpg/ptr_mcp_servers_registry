@@ -2,10 +2,7 @@
     "mcp_server_name": "git_server",
     "util_file_name": "git_utils.py",
     "util_class_name": "GitUtils",
-    "uploader_files": [
-        "git_utils.py"
-    ],
+    "uploader_files": [],
     "additional_package": "",
-    "port": "8000",
-    "environment": {}
+    "port": 8000
 }
